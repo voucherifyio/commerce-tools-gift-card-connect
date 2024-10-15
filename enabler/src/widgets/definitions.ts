@@ -1,4 +1,4 @@
-import { BaseOptions, WidgetOptions, GiftCardWidget, GiftCardWidgetBuilder } from "../giftcards/definitions";
+import { BaseOptions, WidgetOptions, GiftCardWidget, GiftCardWidgetBuilder } from "../providers/definitions";
 
 
 /**

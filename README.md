@@ -1,5 +1,5 @@
-# connect-payment-integration-adyen
-This repository provides a [connect](https://docs.commercetools.com/connect) for integration to Adyen payment service provider (PSP).
+# connect-giftcard-integration-voucherify
+This repository provides a [connect](https://docs.commercetools.com/connect) for integration to Voucherify gift card service.
 
 ## Features
 - Typescript language supported.
@@ -9,7 +9,7 @@ This repository provides a [connect](https://docs.commercetools.com/connect) for
 - Includes local development utilities in npm commands to build, start, test, lint & prettify code.
 
 ## Overview
-The adyen-integration connector contains two modules :  
+The voucherify-integration connector contains two modules :  
 - Enabler: Acts as a wrapper implementation in which frontend components are embedded. It gives control to checkout product on when and how to load the connector frontend based on business configuration. In cases connector is used directly and not through Checkout product, the connector library can be loaded directly on frontend than the PSP one.
 - Processor : Acts as backend services which is a middleware to integrate with Voucherify. It facilitates communication between Voucherify and checkout, while also updating payment entity in composable commerce.  `connect-payment-sdk` will be offered to be used in connector to manage request context, sessions and other tools necessary to transact.
 

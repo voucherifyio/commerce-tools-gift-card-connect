@@ -1,4 +1,4 @@
-import { BaseOptions, GiftCardWidget, WidgetOptions } from "../giftcards/definitions";
+import { BaseOptions, GiftCardWidget, WidgetOptions } from "../providers/definitions";
 import { BaseWidgetBuilder, DefaultWidget } from "./definitions"
 
 export class FormBuilder extends BaseWidgetBuilder {
