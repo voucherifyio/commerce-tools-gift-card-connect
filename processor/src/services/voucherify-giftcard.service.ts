@@ -22,7 +22,10 @@ import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
 import { getCartIdFromContext } from '../libs/fastify/context/context';
+<<<<<<< HEAD
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
+=======
+>>>>>>> 64c795e (feat(gc): implement balance endpoint)
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
