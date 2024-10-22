@@ -10,9 +10,10 @@ export type VoucherifyApiErrorData = {
 export class VoucherifyApiError extends Errorx {
   constructor(errorData: VoucherifyApiErrorData, additionalOpts?: ErrorxAdditionalOpts) {
     super({
-      code: `GenericError`,
+      code: 'GenericError',
       httpErrorStatus: errorData.code,
       message: errorData.message,
+      skipLog: true,
       ...additionalOpts,
     });
   }

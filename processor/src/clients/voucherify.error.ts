@@ -38,7 +38,7 @@ export class VoucherifyError extends Error {
   }
 }
 
-function generateMessage(body: unknown, statusCode: number) {
+export function generateMessage(body: unknown, statusCode: number) {
   body = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
 
   return `Unexpected status code: ${statusCode} - Details: ${body}`;

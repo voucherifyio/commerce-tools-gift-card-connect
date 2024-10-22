@@ -13,7 +13,7 @@ import {
   RefundPaymentRequest,
   StatusResponse,
 } from './types/operation.type';
-import { config } from '../config/config';
+import { getConfig } from '../config/config';
 import { appLogger, paymentSDK } from '../payment-sdk';
 import { AbstractGiftCardService } from './abstract-giftcard.service';
 import { VoucherifyAPI } from '../clients/voucherify.client';
@@ -49,7 +49,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
    */
   async status(): Promise<StatusResponse> {
     const handler = await statusHandler({
-      timeout: config.healthCheckTimeout,
+      timeout: getConfig().healthCheckTimeout,
       log: appLogger,
       checks: [
         healthCheckCommercetoolsPermissions({
@@ -62,7 +62,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
             'manage_checkout_payment_intents',
           ],
           ctAuthorizationService: paymentSDK.ctAuthorizationService,
-          projectKey: config.projectKey,
+          projectKey: getConfig().projectKey,
         }),
         async () => {
           try {
@@ -104,10 +104,9 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
 
     try {
-      // TODO: fast implementation, test this on postman as well
-      if (config.voucherifyCurrency !== amountPlanned.currencyCode) {
+      if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
         throw new VoucherifyCustomError({
-          message: 'cart and voucher currency do not match',
+          message: 'cart and gift card currency do not match',
           code: 400,
           key: 'CurrencyNotMatch',
         });
@@ -125,15 +124,13 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         },
       });
 
-      if (validationResult.valid) {
-        return this.balanceConverter.valid(validationResult.redeemables?.[0].result);
+      if (!validationResult.valid) {
+        return this.balanceConverter.invalid(validationResult.redeemables?.[0].result);
       }
 
-      return this.balanceConverter.invalid(validationResult.redeemables?.[0].result);
-
-      // TODO: check for currency difference
+      return this.balanceConverter.valid(validationResult.redeemables?.[0].result);
     } catch (err) {
-      log.error('Error fetching voucher', { error: err });
+      log.error('Error fetching gift card', { error: err });
       if (err instanceof VoucherifyCustomError || err instanceof VoucherifyApiError) {
         throw err;
       }

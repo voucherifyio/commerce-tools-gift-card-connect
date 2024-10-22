@@ -125,3 +125,76 @@ export const listVouchersOk = {
   ],
   total: 2,
 };
+
+export const validateVouchersOk = {
+  valid: true,
+  redeemables: [
+    {
+      status: 'APPLICABLE',
+      id: 'M3X8IwW8',
+      object: 'voucher',
+      order: {
+        amount: 2700,
+        discount_amount: 100,
+        items_discount_amount: 1700,
+        total_discount_amount: 1800,
+        total_amount: 900,
+        applied_discount_amount: 100,
+        total_applied_discount_amount: 100,
+        items: [],
+        metadata: {},
+        customer_id: null,
+        referrer_id: null,
+        object: 'order',
+      },
+      applicable_to: {},
+      inapplicable_to: {},
+      result: {
+        gift: {
+          credits: 100,
+          balance: 10000,
+        },
+      },
+      metadata: {},
+      categories: [],
+    },
+  ],
+  tracking_id: 'track_9B0kB92+bJa8a+PegaWREw==',
+};
+
+export const validateVouchersNotOk = {
+  valid: false,
+  redeemables: [
+    {
+      status: 'NOT_APPLICABLE',
+      id: 'M3X8IwW8',
+      object: 'voucher',
+      order: {
+        amount: 2700,
+        discount_amount: 100,
+        items_discount_amount: 1700,
+        total_discount_amount: 1800,
+        total_amount: 900,
+        applied_discount_amount: 100,
+        total_applied_discount_amount: 100,
+        items: [],
+        metadata: {},
+        customer_id: null,
+        referrer_id: null,
+        object: 'order',
+      },
+      applicable_to: {},
+      inapplicable_to: {},
+      result: {
+        error: {
+          key: 'not_found',
+          message: 'Resource not found',
+          details: 'voucher with given code does not exist',
+        },
+      },
+      metadata: {},
+      categories: [],
+    },
+  ],
+  tracking_id: 'track_9B0kB92+bJa8a+PegaWREw==',
+};
