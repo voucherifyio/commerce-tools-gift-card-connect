@@ -4,7 +4,7 @@ export type VoucherifyApiErrorData = {
   code: number;
   key: string;
   message: string;
-  details?: string; // TODO: to be thrown as part of private message, and can be logged also
+  details?: string;
 };
 
 export class VoucherifyApiError extends Errorx {

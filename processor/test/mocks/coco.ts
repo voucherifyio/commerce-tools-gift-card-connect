@@ -1,4 +1,4 @@
-import { Cart } from '@commercetools/connect-payments-sdk';
+import { Cart, Payment } from '@commercetools/connect-payments-sdk';
 import { randomUUID } from 'crypto';
 
 export const getCartOK = () => {
@@ -49,4 +49,46 @@ export const getCartOK = () => {
     lastModifiedAt: '2024-01-01T00:00:00Z',
   };
   return mockGetCartResult;
+};
+
+export const getPaymentResultOk: Payment = {
+  id: '123456',
+  version: 1,
+  amountPlanned: {
+    type: 'centPrecision',
+    currencyCode: 'GBP',
+    centAmount: 120000,
+    fractionDigits: 2,
+  },
+  interfaceId: 'REDEMPTION_ID',
+  paymentMethodInfo: {
+    method: 'Debit Card',
+    name: { 'en-US': 'Debit Card', 'en-GB': 'Debit Card' },
+  },
+  paymentStatus: { interfaceText: 'Paid' },
+  transactions: [],
+  interfaceInteractions: [],
+  createdAt: '2024-02-13T00:00:00.000Z',
+  lastModifiedAt: '2024-02-13T00:00:00.000Z',
+};
+
+export const updatePaymentResultOk: Payment = {
+  id: '123456',
+  version: 1,
+  amountPlanned: {
+    type: 'centPrecision',
+    currencyCode: 'GBP',
+    centAmount: 120000,
+    fractionDigits: 2,
+  },
+  interfaceId: 'REDEMPTION_ID',
+  paymentMethodInfo: {
+    method: 'Debit Card',
+    name: { 'en-US': 'Debit Card', 'en-GB': 'Debit Card' },
+  },
+  paymentStatus: { interfaceText: 'Paid' },
+  transactions: [],
+  interfaceInteractions: [],
+  createdAt: '2024-02-13T00:00:00.000Z',
+  lastModifiedAt: '2024-02-13T00:00:00.000Z',
 };

@@ -22,6 +22,7 @@ import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
 import { getCartIdFromContext } from '../libs/fastify/context/context';
+import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -194,11 +195,16 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
    * @returns Promise with mocking data containing operation status and PSP reference
    */
   async refundPayment(request: RefundPaymentRequest): Promise<PaymentProviderModificationResponse> {
-    throw new ErrorGeneral('operation not supported', {
-      fields: {
-        pspReference: request.payment.interfaceId,
-      },
-      privateMessage: "connector doesn't support refund operation yet",
+    const ctPayment = await this.ctPaymentService.getPayment({
+      id: request.payment.id,
     });
+    const redemptionId = ctPayment.interfaceId;
+    const rollbackResult = await VoucherifyAPI().redemptions.rollback(redemptionId as string);
+
+    return {
+      outcome:
+        rollbackResult.result === 'SUCCESS' ? PaymentModificationStatus.APPROVED : PaymentModificationStatus.REJECTED,
+      pspReference: rollbackResult.id,
+    };
   }
 }

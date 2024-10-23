@@ -198,3 +198,29 @@ export const validateVouchersNotOk = {
   ],
   tracking_id: 'track_9B0kB92+bJa8a+PegaWREw==',
 };
+
+export const rollbackVouchersRedemptionOk = {
+  id: 'rr_0f90151bf1d0c97d06',
+  object: 'redemption_rollback',
+  date: '2024-10-23T12:40:47.875Z',
+  customer_id: null,
+  tracking_id: null,
+  metadata: null,
+  amount: -5000,
+  redemption: 'r_0f900b4b48c0fa9567',
+  reason: 'Product malfunction',
+  result: 'SUCCESS',
+  status: 'SUCCEEDED',
+  order: {},
+  channel: {
+    channel_id: 'b964e8d1-9087-4d91-ad24-44b6ca0f7884',
+    channel_type: 'API',
+  },
+  customer: null,
+  related_object_type: 'voucher',
+  related_object_id: 'v_a9xQHRQxEauu2yu56VxxXwnEFwnBg05f',
+  voucher: {},
+  gift: {
+    amount: -5000,
+  },
+};
