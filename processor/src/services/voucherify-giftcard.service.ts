@@ -17,7 +17,7 @@ import { getConfig } from '../config/config';
 import { appLogger, paymentSDK } from '../payment-sdk';
 import { AbstractGiftCardService } from './abstract-giftcard.service';
 import { VoucherifyAPI } from '../clients/voucherify.client';
-import { BalanceResponseSchemaDTO } from '../dtos/voucherify-giftcards.dto';
+import { BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '../dtos/voucherify-giftcards.dto';
 import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-api.error';
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
@@ -144,7 +144,9 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     }
   }
 
-  async redeem(): Promise<void> {
+  
+  async redeem(opts: { data : RedeemRequestDTO }): Promise<RedeemResponseDTO> {
+    console.log(opts)
     throw new ErrorGeneral('operation not supported', {
       privateMessage: "connector doesn't support redeem operation yet",
     });

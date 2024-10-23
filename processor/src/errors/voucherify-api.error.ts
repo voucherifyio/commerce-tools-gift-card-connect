@@ -31,16 +31,3 @@ export class VoucherifyCustomError extends Errorx {
     });
   }
 }
-
-// `Currency of the gift card code - (${errorData.GiftCardCurrency}), does not match cart currency`
-export class VoucherifyCustomError extends Errorx {
-  constructor(errorData: VoucherifyApiErrorData, additionalOpts?: ErrorxAdditionalOpts) {
-    super({
-      code: errorData.key,
-      httpErrorStatus: errorData.code,
-      message: errorData.message,
-      skipLog: true,
-      ...additionalOpts,
-    });
-  }
-}

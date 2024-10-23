@@ -17,6 +17,10 @@ export const BalanceResponseSchema = Type.Object({
 });
 
 export const RedeemRequestSchema = Type.Object({
+  amount: AmountSchema
+})
+
+export const RedeemResponseSchema = Type.Object({
   amount: AmountSchema 
 })
 export const RdeemResponseSchema = Type.Object({

@@ -46,8 +46,9 @@ export const voucherifyGiftCardServiceRoutes = async (
       preHandler: [opts.sessionHeaderAuthHook.authenticate()],
     },
     async (request, reply) => {
-      
-      
+      const res = await opts.giftCardService.redeem({
+        data : request.body,
+      });
       return reply.status(200).send("good");
     },
   );
