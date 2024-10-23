@@ -1,0 +1,9 @@
+// copied over from https://github.com/voucherifyio/voucherify-js-sdk SdK seems to be poorly managed and not in par with API
+
+export interface ValidationError {
+  code?: number;
+  key?: string;
+  message: string;
+  details?: string;
+  request_id?: string;
+}

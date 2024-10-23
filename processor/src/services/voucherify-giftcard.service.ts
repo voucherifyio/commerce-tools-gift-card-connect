@@ -13,10 +13,15 @@ import {
   RefundPaymentRequest,
   StatusResponse,
 } from './types/operation.type';
-import { config } from '../config/config';
+import { getConfig } from '../config/config';
 import { appLogger, paymentSDK } from '../payment-sdk';
 import { AbstractGiftCardService } from './abstract-giftcard.service';
 import { VoucherifyAPI } from '../clients/voucherify.client';
+import { BalanceResponseSchemaDTO } from '../dtos/voucherify-giftcards.dto';
+import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-api.error';
+import { log } from '../libs/logger';
+import { BalanceConverter } from './converters/balance-converter';
+import { getCartIdFromContext } from '../libs/fastify/context/context';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -28,8 +33,10 @@ export type VoucherifyGiftCardServiceOptions = {
 };
 
 export class VoucherifyGiftCardService extends AbstractGiftCardService {
+  private balanceConverter: BalanceConverter;
   constructor(opts: VoucherifyGiftCardServiceOptions) {
     super(opts.ctCartService, opts.ctPaymentService, opts.ctOrderService);
+    this.balanceConverter = new BalanceConverter();
   }
 
   /**
@@ -42,7 +49,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
    */
   async status(): Promise<StatusResponse> {
     const handler = await statusHandler({
-      timeout: config.healthCheckTimeout,
+      timeout: getConfig().healthCheckTimeout,
       log: appLogger,
       checks: [
         healthCheckCommercetoolsPermissions({
@@ -55,7 +62,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
             'manage_checkout_payment_intents',
           ],
           ctAuthorizationService: paymentSDK.ctAuthorizationService,
-          projectKey: config.projectKey,
+          projectKey: getConfig().projectKey,
         }),
         async () => {
           try {
@@ -84,11 +91,61 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
       metadataFn: async () => ({
         name: packageJSON.name,
         description: packageJSON.description,
-        '@voucherify/sdk': packageJSON.dependencies['@voucherify/sdk'],
       }),
     })();
 
     return handler.body;
+  }
+
+  async balance(code: string): Promise<BalanceResponseSchemaDTO> {
+    const ctCart = await this.ctCartService.getCart({
+      id: getCartIdFromContext(),
+    });
+    const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
+
+    try {
+      if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
+        throw new VoucherifyCustomError({
+          message: 'cart and gift card currency do not match',
+          code: 400,
+          key: 'CurrencyNotMatch',
+        });
+      }
+
+      const validationResult = await VoucherifyAPI().validations.validateStackable({
+        redeemables: [
+          {
+            object: 'voucher',
+            id: code,
+          },
+        ],
+        order: {
+          amount: amountPlanned.centAmount,
+        },
+      });
+
+      if (!validationResult.valid) {
+        return this.balanceConverter.invalid(validationResult.redeemables?.[0].result);
+      }
+
+      return this.balanceConverter.valid(validationResult.redeemables?.[0].result);
+    } catch (err) {
+      log.error('Error fetching gift card', { error: err });
+      if (err instanceof VoucherifyCustomError || err instanceof VoucherifyApiError) {
+        throw err;
+      }
+
+      throw new ErrorGeneral('Internal Server Error', {
+        privateMessage: 'internal error making a call to voucherify',
+        cause: err,
+      });
+    }
+  }
+
+  async redeem(): Promise<void> {
+    throw new ErrorGeneral('operation not supported', {
+      privateMessage: "connector doesn't support redeem operation yet",
+    });
   }
 
   /**
