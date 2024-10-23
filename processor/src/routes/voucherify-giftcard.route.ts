@@ -47,7 +47,7 @@ export const voucherifyGiftCardServiceRoutes = async (
     },
     async (request, reply) => {
       
-
+      
       return reply.status(200).send("good");
     },
   );

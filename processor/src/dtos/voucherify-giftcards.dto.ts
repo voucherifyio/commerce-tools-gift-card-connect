@@ -23,4 +23,5 @@ export const RdeemResponseSchema = Type.Object({
 })
 export type RedeemRequestDTO = Static<typeof RedeemRequestSchema>;
 export type RedeemResponseDTO = Static<typeof RdeemResponseSchema>;
+
 export type BalanceResponseSchemaDTO = Static<typeof BalanceResponseSchema>;
