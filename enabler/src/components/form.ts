@@ -1,35 +1,35 @@
-import { BaseOptions, GiftCardWidget, WidgetOptions } from "../providers/definitions";
-import { BaseWidgetBuilder, DefaultWidget } from "./definitions"
+import { Amount, BalanceType, BaseOptions, GiftCardComponent, GiftCardOptions } from "../providers/definitions";
+import { BaseComponentBuilder, DefaultComponent } from "./definitions"
 
-export class FormBuilder extends BaseWidgetBuilder {
+export class FormBuilder extends BaseComponentBuilder {
   constructor(baseOptions: BaseOptions) {
     super(baseOptions);
   }
 
-  build(config: WidgetOptions): GiftCardWidget {
-    return new FormWidget({
-      widgetOptions: config,
+  build(config: GiftCardOptions): GiftCardComponent {
+    return new FormComponent({
+      giftcardOptions: config,
       sessionId: this.sessionId,
       processorUrl: this.processorUrl,
     })
   }
 }
 
-export class FormWidget extends DefaultWidget {
+export class FormComponent extends DefaultComponent {
   constructor(opts: {
-    widgetOptions: WidgetOptions;
+    giftcardOptions: GiftCardOptions;
     sessionId: string;
     processorUrl: string;
   }) {
     super(opts);
   }
 
-  balance(): void {
+  balance(): Promise<BalanceType> {
     // TODO: Implement call to /balance https://commercetools.atlassian.net/browse/SCC-2620
     return null
   }
 
-  submit(): void {
+  submit(_: { amount?: Amount }): void {
     // TODO: Implement call to /redeem https://commercetools.atlassian.net/browse/SCC-2621
     return null
   }
