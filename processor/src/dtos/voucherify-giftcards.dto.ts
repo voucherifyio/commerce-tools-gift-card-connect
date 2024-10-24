@@ -17,14 +17,16 @@ export const BalanceResponseSchema = Type.Object({
 });
 
 export const RedeemRequestSchema = Type.Object({
-  amount: AmountSchema
-})
+  code: Type.String(),
+  balance: Type.Optional(AmountSchema),
+  redeemAmount: Type.Optional(AmountSchema),
+});
 
 export const RedeemResponseSchema = Type.Object({
-  amount: AmountSchema 
-})
-export const RdeemResponseSchema = Type.Object({
-})
+  result: Type.String(),
+});
+
 export type RedeemRequestDTO = Static<typeof RedeemRequestSchema>;
-export type RedeemResponseDTO = Static<typeof RdeemResponseSchema>;
+export type RedeemResponseDTO = Static<typeof RedeemResponseSchema>;
+
 export type BalanceResponseSchemaDTO = Static<typeof BalanceResponseSchema>;

@@ -53,7 +53,7 @@ export abstract class AbstractGiftCardService {
    * Redeem Code
    * @returns
    */
-  abstract redeem(opt: {data :   RedeemRequestDTO}): Promise<RedeemResponseDTO>;
+  abstract redeem(opt: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO>;
 
   /**
    * Capture payment

@@ -46,7 +46,7 @@ export const voucherifyGiftCardServiceRoutes = async (
   );
 
   fastify.post<{ Body: RedeemRequestDTO; Reply: RedeemResponseDTO }>(
-    '/redemptions',
+    '/redemption',
     {
       preHandler: [opts.sessionHeaderAuthHook.authenticate()],
     },
