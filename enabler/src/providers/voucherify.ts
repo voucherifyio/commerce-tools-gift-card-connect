@@ -1,5 +1,5 @@
-import { FormBuilder } from "../widgets/form";
-import { BaseOptions, EnablerOptions, GiftCardEnabler, GiftCardWidgetBuilder } from "./definitions";
+import { FormBuilder } from "../components/form";
+import { BaseOptions, EnablerOptions, GiftCardEnabler, GiftCardBuilder } from "./definitions";
 
 export class VoucherifyEnabler implements GiftCardEnabler {
   setupData: Promise<{ baseOptions: BaseOptions }>;
@@ -19,7 +19,7 @@ export class VoucherifyEnabler implements GiftCardEnabler {
     };
   };
 
-  async createComponentBuilder(): Promise<GiftCardWidgetBuilder | never> {
+  async createGiftCardBuilder(): Promise<GiftCardBuilder | never> {
     const setupData = await this.setupData;
     if (!setupData) {
       throw new Error("VoucherifyEnabler not initialized");
