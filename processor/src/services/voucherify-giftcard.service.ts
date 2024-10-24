@@ -22,6 +22,7 @@ import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
 import { getCartIdFromContext } from '../libs/fastify/context/context';
+import { RedemptionsRedeemStackableParams } from '../clients/types/redemptions';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -162,33 +163,38 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         - Add necessary tests
         - Update the giftcard documentation accordingly: 
      */
-    try {
-      if (!redeemAmount && !balance) {
-        const ctCart = await this.ctCartService.getCart({
-          id: getCartIdFromContext(),
-        });
-        const cartAmount = await this.ctCartService.getPaymentAmount({ cart: ctCart });
-        const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
-        balance = balanceResult.amount;
-      } else if (balance) {
-        redeemAmount = balance;
-      }
 
-      if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
-        throw new VoucherifyCustomError({
-          message: 'cart and gift card currency do not match',
-
-          code: 400,
-          key: 'CurrencyNotMatch',
-        });
-      }
-
-      return Promise.resolve({
-        result: 'done',
-      });
-    } catch (error) {
-      throw error;
+    if (!redeemAmount && !balance) {
+      const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
+      balance = balanceResult.amount;
+    } else if (balance) {
+      redeemAmount = balance;
     }
+
+    if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
+      throw new VoucherifyCustomError({
+        message: 'cart and gift card currency do not match',
+        code: 400,
+        key: 'CurrencyNotMatch',
+      });
+    }
+
+    const redeemStackableRequestObj: RedemptionsRedeemStackableParams = {
+      redeemables: [
+        {
+          object: 'voucher',
+          id: redeemCode,
+        },
+      ],
+      order: {
+        amount: redeemAmount.centAmount,
+      },
+    };
+
+    VoucherifyAPI().redemptions.redeemStackable(redeemStackableRequestObj);
+    return Promise.resolve({
+      result: 'done',
+    });
   }
 
   /**
