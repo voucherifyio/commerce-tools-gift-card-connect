@@ -144,12 +144,51 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     }
   }
 
-  
-  async redeem(opts: { data : RedeemRequestDTO }): Promise<RedeemResponseDTO> {
-    console.log(opts)
-    throw new ErrorGeneral('operation not supported', {
-      privateMessage: "connector doesn't support redeem operation yet",
-    });
+  async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
+    // TODO : Validate the datatype of incoming request
+    let redeemAmount = opts.data.redeemAmount;
+    let balance = opts.data.balance;
+    const redeemCode = opts.data.code;
+    /**
+     * TODO :
+     * - If no amount is received
+     *    If cart amount < balance → Redeem cart amount
+          If cart amount >= balance → Redeem the full balance
+        - Create payment and payment transaction on CoCo
+        - Transaction will be of type Capture
+        - Define the API to support the submit() enabler function https://commercetools.atlassian.net/wiki/spaces/IM/pages/1181515777/Giftcard+Integration#Interface%3A-GiftcardComponent  
+        - Save the redemption id in the Paymet
+        - Print into the logs the exact reason of the issue in case of error
+        - Add necessary tests
+        - Update the giftcard documentation accordingly: 
+     */
+    try {
+      if (!redeemAmount && !balance) {
+        const ctCart = await this.ctCartService.getCart({
+          id: getCartIdFromContext(),
+        });
+        const cartAmount = await this.ctCartService.getPaymentAmount({ cart: ctCart });
+        const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
+        balance = balanceResult.amount;
+      } else if (balance) {
+        redeemAmount = balance;
+      }
+
+      if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
+        throw new VoucherifyCustomError({
+          message: 'cart and gift card currency do not match',
+
+          code: 400,
+          key: 'CurrencyNotMatch',
+        });
+      }
+
+      return Promise.resolve({
+        result: 'done',
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**

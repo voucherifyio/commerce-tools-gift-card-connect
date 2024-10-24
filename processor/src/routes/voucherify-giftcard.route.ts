@@ -4,7 +4,12 @@ import {
 } from '@commercetools/connect-payments-sdk';
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { VoucherifyGiftCardService } from '../services/voucherify-giftcard.service';
-import { BalanceResponseSchema, BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '../dtos/voucherify-giftcards.dto';
+import {
+  BalanceResponseSchema,
+  BalanceResponseSchemaDTO,
+  RedeemRequestDTO,
+  RedeemResponseDTO,
+} from '../dtos/voucherify-giftcards.dto';
 import { Type } from '@sinclair/typebox';
 
 type RoutesOptions = {
@@ -41,15 +46,16 @@ export const voucherifyGiftCardServiceRoutes = async (
   );
 
   fastify.post<{ Body: RedeemRequestDTO; Reply: RedeemResponseDTO }>(
-    '/redemptions',
+    '/redemption',
     {
       preHandler: [opts.sessionHeaderAuthHook.authenticate()],
     },
     async (request, reply) => {
       const res = await opts.giftCardService.redeem({
-        data : request.body,
+        data: request.body,
       });
-      return reply.status(200).send("good");
+
+      return reply.status(200).send(res);
     },
   );
 };
