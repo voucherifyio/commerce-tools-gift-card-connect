@@ -2,7 +2,14 @@
 import { http, HttpHandler, HttpResponse } from 'msw';
 
 export const mockRequest = (basePath: string, uri: string, respCode: number, data?: any): HttpHandler => {
-  return http.all(`${basePath}${uri}`, () => {
+  return http.all(`${basePath}${uri}`, ({ request }) => {
+    const url = new URL(request.url);
+    const reason = url.searchParams.get('reason');
+
+    if (reason) {
+      return HttpResponse.json(data);
+    }
+
     if (respCode === 401) {
       const errorData = {
         error: 'invalid_client',
