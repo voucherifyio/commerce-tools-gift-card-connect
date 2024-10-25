@@ -1,5 +1,6 @@
 import { Amount, BalanceType, BaseOptions, GiftCardComponent, GiftCardOptions } from "../providers/definitions";
 import { BaseComponentBuilder, DefaultComponent } from "./definitions"
+import { fieldIds, getInput } from "./utils";
 
 export class FormBuilder extends BaseComponentBuilder {
   constructor(baseOptions: BaseOptions) {
@@ -9,8 +10,7 @@ export class FormBuilder extends BaseComponentBuilder {
   build(config: GiftCardOptions): GiftCardComponent {
     return new FormComponent({
       giftcardOptions: config,
-      sessionId: this.sessionId,
-      processorUrl: this.processorUrl,
+      baseOptions: this.baseOptions,
     })
   }
 }
@@ -18,14 +18,29 @@ export class FormBuilder extends BaseComponentBuilder {
 export class FormComponent extends DefaultComponent {
   constructor(opts: {
     giftcardOptions: GiftCardOptions;
-    sessionId: string;
-    processorUrl: string;
+    baseOptions: BaseOptions;
   }) {
     super(opts);
   }
 
-  balance(): Promise<BalanceType> {
-    // TODO: Implement call to /balance https://commercetools.atlassian.net/browse/SCC-2620
+  async balance(): Promise<BalanceType> {
+    try {
+      const giftCardCode = getInput(fieldIds.code).value.replace(/\s/g, '')
+      const fetchBalanceURL = this.baseOptions.processorUrl.endsWith("/")
+        ? `${this.baseOptions.processorUrl}balance/${giftCardCode}`
+        : `${this.baseOptions.processorUrl}/balance/${giftCardCode}`
+      const response = await fetch(fetchBalanceURL, {
+        method: 'GET',
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Id": this.baseOptions.sessionId,
+        },
+      });
+
+      return await response.json();
+    } catch(err) {
+      this.baseOptions.onError(err);
+    }
     return null
   }
 

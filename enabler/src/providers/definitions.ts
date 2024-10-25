@@ -21,6 +21,9 @@ export type GiftCardOptions = {
 export type BaseOptions = {
   sessionId: string;
   processorUrl: string;
+  onComplete?: (result: PaymentResult) => void;
+  onError?: (error: any) => void;
+  onChange?: () => boolean;
 };
 
 export type BalanceType = {

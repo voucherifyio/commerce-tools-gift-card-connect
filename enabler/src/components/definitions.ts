@@ -5,12 +5,10 @@ import { BaseOptions, GiftCardOptions, GiftCardComponent, GiftCardBuilder, Balan
  * Base Web Component
  */
 export abstract class BaseComponentBuilder implements GiftCardBuilder {
-  protected sessionId: string;
-  protected processorUrl: string;
+  protected baseOptions: BaseOptions;
 
   constructor(baseOptions: BaseOptions) {
-    this.sessionId = baseOptions.sessionId;
-    this.processorUrl = baseOptions.processorUrl;
+    this.baseOptions = baseOptions;
   }
 
   abstract build(config: GiftCardOptions): GiftCardComponent;
@@ -18,17 +16,14 @@ export abstract class BaseComponentBuilder implements GiftCardBuilder {
 
 export abstract class DefaultComponent implements GiftCardComponent {
   protected giftcardOptions: GiftCardOptions;
-  protected sessionId: string;
-  protected processorUrl: string;
+  protected baseOptions: BaseOptions;
 
   constructor(opts: {
     giftcardOptions: GiftCardOptions;
-    sessionId: string;
-    processorUrl: string;
+    baseOptions: BaseOptions;
   }) {
     this.giftcardOptions = opts.giftcardOptions;
-    this.sessionId = opts.sessionId;
-    this.processorUrl = opts.processorUrl;
+    this.baseOptions = opts.baseOptions;
   }
   abstract balance(): Promise<BalanceType>;
 
