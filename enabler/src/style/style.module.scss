@@ -1,0 +1,82 @@
+@use './vx' as *;
+@import './ally';
+
+/* input fields border colors */
+:global(.is-valid) {
+  & iframe {
+    border: 1px solid $color-border-default !important;
+  }
+}
+
+:global(.is-onfocus) {
+  & iframe {
+    border: 2px solid $color-status-default !important;
+  }
+  ~ .error {
+    display: none;
+  }
+}
+
+:global(.is-invalid),
+.inputError :not(:global(.is-onfocus)),
+.inputErrorEmptyText {
+  & iframe {
+    border: 2px solid $color-status-error !important;
+  }
+}
+
+/* floting labels */
+.floatingLabel {
+  position: absolute;
+  pointer-events: none;
+  left: 0.8rem;
+  top: 1rem;
+  transition: 0.2s ease all;
+  background-color: white;
+  padding: 0 0.25rem;
+  width: 80%;
+}
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+:global(.is-empty) ~ .cardIcons {
+  display: block;
+}
+
+:global(.is-empty) ~ .floatingCard {
+  display: none;
+}
+
+:global(.is-onfocus) ~ .floatingLabel,
+:global(.is-valid) ~ .floatingLabel,
+:global(.is-invalid):not(.inputEmpty) ~ .floatingLabel {
+  top: -0.5rem;
+  font-size: 0.75rem;
+  width: auto;
+}
+
+/* floating labels colors */
+:global(.is-valid) ~ .floatingLabel {
+  color: $color-border-default;
+}
+
+:global(.is-onfocus) ~ .floatingLabel {
+  color: $color-status-default;
+}
+
+:global(.is-invalid):not(.inputEmpty) ~ .floatingLabel {
+  color: $color-status-error;
+}
+
+.inputErrorEmptyText ~ .floatingLabel {
+  color: black;
+}
+
+
+.hidden {
+  display: none;
+}

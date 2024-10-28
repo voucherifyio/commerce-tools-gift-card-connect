@@ -1,6 +1,8 @@
 import { Amount, BalanceType, BaseOptions, GiftCardComponent, GiftCardOptions } from "../providers/definitions";
 import { BaseComponentBuilder, DefaultComponent } from "./definitions"
-import { fieldIds, getInput } from "./utils";
+import { addFormFieldsEventListeners, fieldIds, getInput } from "./utils";
+import styles from '../style/style.module.scss';
+import inputFieldStyles from '../style/inputField.module.scss';
 
 export class FormBuilder extends BaseComponentBuilder {
   constructor(baseOptions: BaseOptions) {
@@ -49,10 +51,24 @@ export class FormComponent extends DefaultComponent {
     return null
   }
 
-  mount(_: string): void {
-    // TODO: Mount input field component here https://commercetools.atlassian.net/browse/SCC-2619
-    return null
+  mount(selector: string): void {
+    document.querySelector(selector).insertAdjacentHTML("afterbegin", this._getField());
+    addFormFieldsEventListeners()
   }
 
-  // TODO: implement a method that returns the form html element, call this method in the mount method.
+  private _getField() {
+    return `
+      <div class="${styles.wrapper}">
+        <form class="${styles.paymentForm}">
+          <div class="${inputFieldStyles.inputContainer}">
+            <label class="${inputFieldStyles.inputLabel}" for="giftcard-code">
+              Enter and apply gift card number <span aria-hidden="true"> *</span>
+            </label>
+            <input class="${inputFieldStyles.inputField}" type="text" id="giftcard-code" name="giftCardCode" value="">
+            <span class="${styles.hidden} ${inputFieldStyles.errorField}">Invalid code</span>
+          </div>
+        </form>
+      </div>
+    `
+  }
 }
