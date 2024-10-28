@@ -1,7 +1,6 @@
 import { Amount, BalanceType, BaseOptions, GiftCardComponent, GiftCardOptions } from "../providers/definitions";
 import { BaseComponentBuilder, DefaultComponent } from "./definitions"
 import { addFormFieldsEventListeners, fieldIds, getInput } from "./utils";
-import styles from '../style/style.module.scss';
 import inputFieldStyles from '../style/inputField.module.scss';
 
 export class FormBuilder extends BaseComponentBuilder {
@@ -58,14 +57,14 @@ export class FormComponent extends DefaultComponent {
 
   private _getField() {
     return `
-      <div class="${styles.wrapper}">
-        <form class="${styles.paymentForm}">
+      <div class="${inputFieldStyles.wrapper}">
+        <form class="${inputFieldStyles.paymentForm}">
           <div class="${inputFieldStyles.inputContainer}">
             <label class="${inputFieldStyles.inputLabel}" for="giftcard-code">
               Enter and apply gift card number <span aria-hidden="true"> *</span>
             </label>
             <input class="${inputFieldStyles.inputField}" type="text" id="giftcard-code" name="giftCardCode" value="">
-            <span class="${styles.hidden} ${inputFieldStyles.errorField}">Invalid code</span>
+            <span class="${inputFieldStyles.hidden} ${inputFieldStyles.errorField}">Invalid code</span>
           </div>
         </form>
       </div>

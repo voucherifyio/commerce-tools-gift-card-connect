@@ -1,5 +1,4 @@
 import inputFieldStyles from '../style/inputField.module.scss';
-import styles from '../style/style.module.scss';
 
 export const getInput = (field: string) => (document.querySelector(`#${field}`) as HTMLInputElement);
 
@@ -21,7 +20,7 @@ const showErrorIfInvalid = (field: string) => {
   if (!isFieldValid(field)) {
     const input = getInput(field);
     input.parentElement.classList.add(inputFieldStyles.error);
-    input.parentElement.querySelector(`#${field} + .${inputFieldStyles.errorField}`).classList.remove(styles.hidden);
+    input.parentElement.querySelector(`#${field} + .${inputFieldStyles.errorField}`).classList.remove(inputFieldStyles.hidden);
   }
 }
 
@@ -29,7 +28,7 @@ const hideErrorIfValid = (field: string) => {
   if (isFieldValid(field)) {
     const input = getInput(field);
     input.parentElement.classList.remove(inputFieldStyles.error);
-    input.parentElement.querySelector(`#${field} + .${inputFieldStyles.errorField}`).classList.add(styles.hidden);
+    input.parentElement.querySelector(`#${field} + .${inputFieldStyles.errorField}`).classList.add(inputFieldStyles.hidden);
   }
 }
 

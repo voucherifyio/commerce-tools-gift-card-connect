@@ -1,5 +1,6 @@
 
 @use './vx' as *;
+@import './ally';
 
 .inputContainer {
   position: relative;
@@ -193,4 +194,18 @@
   color: $color-status-error;
   font-size: 0.75rem;
   padding: 0.25rem 0.75rem 0.25rem 1rem;
+}
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.paymentForm {
+  margin-top: 1rem;
 }
