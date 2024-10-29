@@ -1,5 +1,5 @@
-import { FormBuilder } from "../components/form";
-import { BaseOptions, EnablerOptions, GiftCardEnabler, GiftCardBuilder, PaymentResult } from "./definitions";
+import { FormBuilder } from '../components/form';
+import { BaseOptions, EnablerOptions, GiftCardEnabler, GiftCardBuilder, PaymentResult } from './definitions';
 
 export class VoucherifyEnabler implements GiftCardEnabler {
   setupData: Promise<{ baseOptions: BaseOptions }>;
@@ -11,16 +11,16 @@ export class VoucherifyEnabler implements GiftCardEnabler {
   // Default handlers
   private static onError = (err: any) => {
     console.log(err);
-    throw new Error('something went wrong.')
+    throw new Error('something went wrong.');
   };
 
   private static onComplete = (result: PaymentResult) => {
-    console.log("onSubmit", result);
+    console.log('onSubmit', result);
   };
 
   private static onChange = () => {
-    return null
-  }
+    return null;
+  };
 
   private static _Setup = async (options: EnablerOptions): Promise<{ baseOptions: BaseOptions }> => {
     // HINT: config calls can be done here, to be used if necessary in the enabler
@@ -29,6 +29,7 @@ export class VoucherifyEnabler implements GiftCardEnabler {
       baseOptions: {
         sessionId: options.sessionId,
         processorUrl: options.processorUrl,
+        locale: options.locale,
         onComplete: options.onComplete ? options.onComplete : this.onComplete,
         onError: options.onError ? options.onError : this.onError,
         onChange: options.onChange ? options.onChange : this.onChange,
@@ -39,10 +40,9 @@ export class VoucherifyEnabler implements GiftCardEnabler {
   async createGiftCardBuilder(): Promise<GiftCardBuilder | never> {
     const setupData = await this.setupData;
     if (!setupData) {
-      throw new Error("VoucherifyEnabler not initialized");
+      throw new Error('VoucherifyEnabler not initialized');
     }
-    
-    
+
     return new FormBuilder(setupData.baseOptions);
   }
 }
