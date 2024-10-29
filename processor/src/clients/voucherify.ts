@@ -115,6 +115,7 @@ export function Voucherify(options: VoucherifyOptions) {
   const vouchers = new Vouchers(client);
   const validations = new Validations(client);
   const redemptions = new Redemptions(client);
+
   return {
     vouchers,
     validations,

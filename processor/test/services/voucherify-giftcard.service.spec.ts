@@ -7,13 +7,19 @@ import {
 import { paymentSDK } from '../../src/payment-sdk';
 import { AbstractGiftCardService } from '../../src/services/abstract-giftcard.service';
 import { HealthCheckResult } from '@commercetools/connect-payments-sdk';
-import { listVouchersOk, validateVouchersNotOk, validateVouchersOk } from '../mocks/voucherify';
+import {
+  listVouchersOk,
+  rollbackVouchersRedemptionOk,
+  validateVouchersNotOk,
+  validateVouchersOk,
+} from '../mocks/voucherify';
 import * as StatusHandler from '@commercetools/connect-payments-sdk/dist/api/handlers/status.handler';
 import * as Config from '../../src/config/config';
 import { mockRequest } from '../mocks/utils';
-import { StatusResponse } from '../../src/services/types/operation.type';
+import { ModifyPayment, StatusResponse } from '../../src/services/types/operation.type';
 import { DefaultCartService } from '@commercetools/connect-payments-sdk/dist/commercetools/services/ct-cart.service';
-import { getCartOK } from '../mocks/coco';
+import { getCartOK, getPaymentResultOk, updatePaymentResultOk } from '../mocks/coco';
+import { DefaultPaymentService } from '@commercetools/connect-payments-sdk/dist/commercetools/services/ct-payment.service';
 
 interface FlexibleConfig {
   [key: string]: string | number | undefined; // Adjust the type according to your config values
@@ -101,5 +107,86 @@ describe('voucherify-giftcard.service', () => {
 
     const result = giftcardService.balance('some-code');
     await expect(result).rejects.toThrowError('voucher with given code does not exist');
+  });
+
+  describe('modifyPayment', () => {
+    test('capturePayment', async () => {
+      // Given
+      const modifyPaymentOpts: ModifyPayment = {
+        paymentId: 'dummy-paymentId',
+        data: {
+          actions: [
+            {
+              action: 'capturePayment',
+              amount: {
+                centAmount: 1000,
+                currencyCode: 'EUR',
+              },
+            },
+          ],
+        },
+      };
+
+      jest.spyOn(DefaultPaymentService.prototype, 'getPayment').mockResolvedValue(getPaymentResultOk);
+      jest.spyOn(DefaultPaymentService.prototype, 'updatePayment').mockResolvedValue(updatePaymentResultOk);
+
+      const result = giftcardService.modifyPayment(modifyPaymentOpts);
+      expect(result).rejects.toThrowError('operation not supported');
+    });
+
+    test('cancelPayment', async () => {
+      // Given
+      const modifyPaymentOpts: ModifyPayment = {
+        paymentId: 'dummy-paymentId',
+        data: {
+          actions: [
+            {
+              action: 'cancelPayment',
+            },
+          ],
+        },
+      };
+
+      jest.spyOn(DefaultPaymentService.prototype, 'getPayment').mockResolvedValue(getPaymentResultOk);
+      jest.spyOn(DefaultPaymentService.prototype, 'updatePayment').mockResolvedValue(updatePaymentResultOk);
+
+      const result = giftcardService.modifyPayment(modifyPaymentOpts);
+      expect(result).rejects.toThrowError('operation not supported');
+    });
+
+    test('refundPayment', async () => {
+      // Given
+      const redemptionId = getPaymentResultOk.interfaceId;
+
+      mockServer.use(
+        mockRequest(
+          'https://api.voucherify.io',
+          `/v1/redemptions/${redemptionId}/rollback`,
+          200,
+          rollbackVouchersRedemptionOk,
+        ),
+      );
+
+      const modifyPaymentOpts: ModifyPayment = {
+        paymentId: 'dummy-paymentId',
+        data: {
+          actions: [
+            {
+              action: 'refundPayment',
+              amount: {
+                centAmount: 3000,
+                currencyCode: 'EUR',
+              },
+            },
+          ],
+        },
+      };
+
+      jest.spyOn(DefaultPaymentService.prototype, 'getPayment').mockResolvedValue(getPaymentResultOk);
+      jest.spyOn(DefaultPaymentService.prototype, 'updatePayment').mockResolvedValue(updatePaymentResultOk);
+
+      const result = await giftcardService.modifyPayment(modifyPaymentOpts);
+      expect(result?.outcome).toStrictEqual('approved');
+    });
   });
 });

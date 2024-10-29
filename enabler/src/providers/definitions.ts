@@ -1,25 +1,51 @@
-export interface GiftCardWidget {
-  submit(): void;
-  balance(): void;
+export interface GiftCardComponent {
+  submit(opts: { amount?: Amount }): void;
+  balance(): Promise<BalanceType>;
   mount(selector: string): void;
 }
 
-export interface GiftCardWidgetBuilder {
-  build(config: WidgetOptions): GiftCardWidget;
+export type Amount = {
+  centAmount: number;
+  currencyCode: string;
 }
 
-export type WidgetOptions = {};
+export interface GiftCardBuilder {
+  build(config: GiftCardOptions): GiftCardComponent;
+}
+
+export type GiftCardOptions = {
+  onGiftCardReady?: () => Promise<void>;
+  onGiftCardSubmit?: () => Promise<void>;
+};
 
 export type BaseOptions = {
   sessionId: string;
   processorUrl: string;
+  onComplete?: (result: PaymentResult) => void;
+  onError?: (error: any) => void;
+  onChange?: () => boolean;
 };
+
+export type BalanceType = {
+  status: {
+    state: 'Valid' | 'NotFound' | 'Expired' | 'CurrencyNotMatch' | 'GenericError',
+    errors?: {
+      code: string;
+      message: string;
+    }
+  },
+  amount?: {
+    centAmount: number;
+    currencyCode: string;
+  }
+}
 
 export type EnablerOptions = {
   processorUrl: string;
   sessionId: string;
   onComplete?: (result: PaymentResult) => void;
   onError?: (error: any) => void;
+  onChange?: () => boolean;
 };
 
 export type PaymentResult =
@@ -33,7 +59,7 @@ export interface GiftCardEnabler {
   /**
    * @throws {Error}
    */
-  createComponentBuilder: (
+  createGiftCardBuilder: (
     type: string
-  ) => Promise<GiftCardWidgetBuilder | never>;
+  ) => Promise<GiftCardBuilder | never>;
 }
