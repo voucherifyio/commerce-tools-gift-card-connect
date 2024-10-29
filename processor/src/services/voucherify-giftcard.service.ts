@@ -154,17 +154,28 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     });
 
     let redeemAmount = opts.data.redeemAmount;
-    const balance = opts.data.balance;
+    let balance = opts.data.balance;
     const redeemCode = opts.data.code;
 
     try {
       if (!redeemAmount && !balance) {
-        const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
-        redeemAmount = balanceResult.amount;
-      } else if (balance && !redeemAmount) {
-        redeemAmount = balance;
-      } else if (balance && redeemAmount && redeemAmount.centAmount < balance.centAmount) {
-        redeemAmount = balance;
+        throw new VoucherifyCustomError({
+          message: 'no redeem amount and current giftcard balance have been provided',
+          code: 400,
+          key: 'AmountNotSpecified',
+        });
+      } 
+      if (!redeemAmount && balance && balance.centAmount > ctCart.totalPrice.centAmount) {
+        redeemAmount = {
+          centAmount : ctCart.totalPrice.centAmount,
+          currencyCode : getConfig().voucherifyCurrency
+        }
+      } 
+      else if (!redeemAmount && balance && balance.centAmount <= ctCart.totalPrice.centAmount) {
+        redeemAmount = {
+          centAmount : balance.centAmount,
+          currencyCode : getConfig().voucherifyCurrency
+        }
       }
 
       if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
