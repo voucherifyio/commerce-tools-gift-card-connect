@@ -1,6 +1,5 @@
 import * as T from './types/redemptions';
 
-
 import { encode, isObject, isString } from './helpers';
 import type { RequestController } from './voucherify-request-controller';
 

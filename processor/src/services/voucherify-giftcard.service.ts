@@ -25,7 +25,7 @@ import { getCartIdFromContext } from '../libs/fastify/context/context';
 
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
-import { RedemptionsRedeemStackableParams } from '../clients/types/redemptions';
+import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -150,7 +150,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
   async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
     // TODO : Validate the datatype of incoming request
     let redeemAmount = opts.data.redeemAmount;
-    let balance = opts.data.balance;
+    const balance = opts.data.balance;
     const redeemCode = opts.data.code;
     /**
      * TODO :
@@ -165,38 +165,58 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         - Add necessary tests
         - Update the giftcard documentation accordingly: 
      */
+    try {
+      if (!redeemAmount && !balance) {
+        const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
+        redeemAmount = balanceResult.amount;
+      } else if (balance && !redeemAmount) {
+        redeemAmount = balance;
+      } else if (balance && redeemAmount && redeemAmount.centAmount < balance.centAmount) {
+        redeemAmount = balance;
+      }
 
-    if (!redeemAmount && !balance) {
-      const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
-      balance = balanceResult.amount;
-    } else if (balance) {
-      redeemAmount = balance;
-    }
+      if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
+        throw new VoucherifyCustomError({
+          message: 'cart and gift card currency do not match',
+          code: 400,
+          key: 'CurrencyNotMatch',
+        });
+      }
 
-    if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
-      throw new VoucherifyCustomError({
-        message: 'cart and gift card currency do not match',
-        code: 400,
-        key: 'CurrencyNotMatch',
+      const redeemStackableRequestObj: RedemptionsRedeemStackableParams = {
+        redeemables: [
+          {
+            object: 'voucher',
+            id: redeemCode,
+          },
+        ],
+        order: {
+          amount: redeemAmount.centAmount,
+        },
+      };
+
+      const redemptionResult: RedemptionsRedeemStackableResponse =
+        await VoucherifyAPI().redemptions.redeemStackable(redeemStackableRequestObj);
+
+      const redemptionResultObj = redemptionResult.redemptions[0];
+      if (redemptionResultObj.result === 'SUCCESS') {
+        // TODO : update COCO
+      }
+      return Promise.resolve({
+        result: redemptionResultObj.result,
+      });
+    } catch (err) {
+      log.error('Error fetching gift card', { error: err });
+
+      if (err instanceof VoucherifyCustomError || err instanceof VoucherifyApiError) {
+        throw err;
+      }
+
+      throw new ErrorGeneral('Internal Server Error', {
+        privateMessage: 'internal error making a call to voucherify',
+        cause: err,
       });
     }
-
-    const redeemStackableRequestObj: RedemptionsRedeemStackableParams = {
-      redeemables: [
-        {
-          object: 'voucher',
-          id: redeemCode,
-        },
-      ],
-      order: {
-        amount: redeemAmount.centAmount,
-      },
-    };
-
-    VoucherifyAPI().redemptions.redeemStackable(redeemStackableRequestObj);
-    return Promise.resolve({
-      result: 'done',
-    });
   }
 
   /**
