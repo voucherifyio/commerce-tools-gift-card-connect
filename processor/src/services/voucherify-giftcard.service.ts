@@ -21,11 +21,12 @@ import { BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '.
 import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-api.error';
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
-import { getCartIdFromContext } from '../libs/fastify/context/context';
+import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fastify/context/context';
 
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
 import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
+import { PaymentDraft } from '@commercetools/connect-payments-sdk';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -148,23 +149,14 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
   }
 
   async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
-    // TODO : Validate the datatype of incoming request
+    const ctCart = await this.ctCartService.getCart({
+      id: getCartIdFromContext(),
+    });
+
     let redeemAmount = opts.data.redeemAmount;
     const balance = opts.data.balance;
     const redeemCode = opts.data.code;
-    /**
-     * TODO :
-     * - If no amount is received
-     *    If cart amount < balance → Redeem cart amount
-          If cart amount >= balance → Redeem the full balance
-        - Create payment and payment transaction on CoCo
-        - Transaction will be of type Capture
-        - Define the API to support the submit() enabler function https://commercetools.atlassian.net/wiki/spaces/IM/pages/1181515777/Giftcard+Integration#Interface%3A-GiftcardComponent  
-        - Save the redemption id in the Paymet
-        - Print into the logs the exact reason of the issue in case of error
-        - Add necessary tests
-        - Update the giftcard documentation accordingly: 
-     */
+
     try {
       if (!redeemAmount && !balance) {
         const balanceResult: BalanceResponseSchemaDTO = await this.balance(redeemCode);
@@ -200,7 +192,40 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
 
       const redemptionResultObj = redemptionResult.redemptions[0];
       if (redemptionResultObj.result === 'SUCCESS') {
-        // TODO : update COCO
+        const paymentDraft: PaymentDraft = {
+          interfaceId: redemptionResultObj.id,
+          amountPlanned: {
+            type: 'centPrecision',
+            currencyCode: getConfig().voucherifyCurrency,
+            centAmount: redeemAmount.centAmount,
+            fractionDigits: 2,
+          },
+          paymentMethodInfo: {
+            paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
+            method: 'giftcard',
+          },
+          ...(ctCart.customerId && {
+            customer: {
+              typeId: 'customer',
+              id: ctCart.customerId,
+            },
+          }),
+          ...(!ctCart.customerId &&
+            ctCart.anonymousId && {
+              anonymousId: ctCart.anonymousId,
+            }),
+          transactions: [
+            {
+              type: 'Capture',
+              amount: redeemAmount,
+              interactionId: redemptionResultObj.id,
+              state: redemptionResultObj.result,
+            },
+          ],
+        };
+
+        const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
+        console.log(ctPayment);
       }
       return Promise.resolve({
         result: redemptionResultObj.result,
