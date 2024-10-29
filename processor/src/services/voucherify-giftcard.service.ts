@@ -26,7 +26,7 @@ import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fa
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
 import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
-import { PaymentDraft } from '@commercetools/connect-payments-sdk';
+import { PaymentDraft, Cart } from '@commercetools/connect-payments-sdk';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -175,7 +175,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         });
       }
 
-      const redeemStackableRequestObj: RedemptionsRedeemStackableParams = {
+      const redemptionsRedeemStackableParams: RedemptionsRedeemStackableParams = {
         redeemables: [
           {
             object: 'voucher',
@@ -187,58 +187,29 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         },
       };
 
-      const redemptionResult: RedemptionsRedeemStackableResponse =
-        await VoucherifyAPI().redemptions.redeemStackable(redeemStackableRequestObj);
+      const redemptionResult: RedemptionsRedeemStackableResponse = await VoucherifyAPI().redemptions.redeemStackable(
+        redemptionsRedeemStackableParams,
+      );
 
       const redemptionResultObj = redemptionResult.redemptions[0];
-      if (redemptionResultObj.result === 'SUCCESS') {
-        const paymentDraft: PaymentDraft = {
-          interfaceId: redemptionResultObj.id,
-          amountPlanned: {
-            type: 'centPrecision',
-            currencyCode: getConfig().voucherifyCurrency,
-            centAmount: redeemAmount.centAmount,
-            fractionDigits: 2,
-          },
-          paymentMethodInfo: {
-            paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
-            method: 'giftcard',
-          },
-          ...(ctCart.customerId && {
-            customer: {
-              typeId: 'customer',
-              id: ctCart.customerId,
-            },
-          }),
-          ...(!ctCart.customerId &&
-            ctCart.anonymousId && {
-              anonymousId: ctCart.anonymousId,
-            }),
-          transactions: [
-            {
-              type: 'Capture',
-              amount: redeemAmount,
-              interactionId: redemptionResultObj.id,
-              state: redemptionResultObj.result,
-            },
-          ],
-        };
 
-        const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
-        console.log(ctPayment);
-      }
+      const paymentDraft: PaymentDraft = this.preparePaymentDraft(redemptionResult, ctCart);
+      const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
+
       return Promise.resolve({
-        result: redemptionResultObj.result,
+        result: this.convertVoucherifyResultCode(redemptionResultObj.result),
+        paymentId: ctPayment.id,
+        redemptionId: redemptionResultObj.id,
       });
     } catch (err) {
-      log.error('Error fetching gift card', { error: err });
+      log.error('Error in giftcard redemption', { error: err });
 
       if (err instanceof VoucherifyCustomError || err instanceof VoucherifyApiError) {
         throw err;
       }
 
       throw new ErrorGeneral('Internal Server Error', {
-        privateMessage: 'internal error making a call to voucherify',
+        privateMessage: 'internal error making a call to voucherify and composable commerce',
         cause: err,
       });
     }
@@ -301,5 +272,54 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         rollbackResult.result === 'SUCCESS' ? PaymentModificationStatus.APPROVED : PaymentModificationStatus.REJECTED,
       pspReference: rollbackResult.id,
     };
+  }
+
+  private preparePaymentDraft(redemptionResult: RedemptionsRedeemStackableResponse, ctCart: Cart): PaymentDraft {
+    const redemptionResultObj = redemptionResult.redemptions[0];
+    console.log(redemptionResultObj);
+    return {
+      interfaceId: redemptionResultObj.id,
+      amountPlanned: {
+        type: 'centPrecision',
+        currencyCode: getConfig().voucherifyCurrency,
+        centAmount: redemptionResultObj.order?.amount,
+        fractionDigits: 2,
+      },
+      paymentMethodInfo: {
+        paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
+        method: 'giftcard',
+      },
+      ...(ctCart.customerId && {
+        customer: {
+          typeId: 'customer',
+          id: ctCart.customerId,
+        },
+      }),
+      ...(!ctCart.customerId &&
+        ctCart.anonymousId && {
+          anonymousId: ctCart.anonymousId,
+        }),
+      transactions: [
+        {
+          type: this.getPaymentTransactionType('capturePayment'),
+          amount: {
+            centAmount: redemptionResultObj.order?.amount,
+            type: 'centPrecision',
+            currencyCode: getConfig().voucherifyCurrency,
+            fractionDigits: 2,
+          },
+          interactionId: redemptionResultObj.id,
+          state: this.convertVoucherifyResultCode(redemptionResultObj.result),
+        },
+      ],
+    };
+  }
+  private convertVoucherifyResultCode(resultCode: string) {
+    if (resultCode === 'SUCCESS') {
+      return 'Success';
+    } else if (resultCode === 'FAILURE') {
+      return 'Failure';
+    }
+    return 'Initial';
   }
 }

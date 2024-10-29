@@ -24,6 +24,8 @@ export const RedeemRequestSchema = Type.Object({
 
 export const RedeemResponseSchema = Type.Object({
   result: Type.String(),
+  paymentId: Type.String(),
+  redemptionId: Type.String(),
 });
 
 export type RedeemRequestDTO = Static<typeof RedeemRequestSchema>;
