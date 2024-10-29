@@ -1,5 +1,11 @@
-import { BaseOptions, GiftCardOptions, GiftCardComponent, GiftCardBuilder, BalanceType, Amount } from "../providers/definitions";
-
+import {
+  BaseOptions,
+  GiftCardOptions,
+  GiftCardComponent,
+  GiftCardBuilder,
+  BalanceType,
+  Amount,
+} from '../providers/definitions';
 
 /**
  * Base Web Component
@@ -18,16 +24,13 @@ export abstract class DefaultComponent implements GiftCardComponent {
   protected giftcardOptions: GiftCardOptions;
   protected baseOptions: BaseOptions;
 
-  constructor(opts: {
-    giftcardOptions: GiftCardOptions;
-    baseOptions: BaseOptions;
-  }) {
+  constructor(opts: { giftcardOptions: GiftCardOptions; baseOptions: BaseOptions }) {
     this.giftcardOptions = opts.giftcardOptions;
     this.baseOptions = opts.baseOptions;
   }
   abstract balance(): Promise<BalanceType>;
 
-  abstract submit(opts: {amount?: Amount}): void;
+  abstract submit(opts: { amount?: Amount }): void;
 
-  abstract mount(selector: string): void ;
+  abstract mount(selector: string): void;
 }

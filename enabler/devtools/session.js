@@ -31,18 +31,18 @@ const fetchAdminToken = async () => {
       message: `Token fetched: ${token.access_token}`,
     });
   }
-  console.log("Token fetched:", token)
+  console.log('Token fetched:', token);
   return token.access_token;
-}
+};
 
-const getSessionId = async(cartId) => {
+const getSessionId = async (cartId) => {
   const accessToken = await fetchAdminToken();
 
   const sessionMetadata = {
     processorUrl: __VITE_PROCESSOR_URL__,
   };
 
-  const url = `${__VITE_CTP_SESSION_URL__}/${projectKey}/sessions`
+  const url = `${__VITE_CTP_SESSION_URL__}/${projectKey}/sessions`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -54,7 +54,7 @@ const getSessionId = async(cartId) => {
       cart: {
         cartRef: {
           id: cartId,
-        }
+        },
       },
       metadata: sessionMetadata,
     }),
@@ -62,10 +62,10 @@ const getSessionId = async(cartId) => {
   const data = await res.json();
 
   if (!res.ok) {
-    console.error("Not able to create session:", url, data)
-    throw new Error("Not able to create session")
+    console.error('Not able to create session:', url, data);
+    throw new Error('Not able to create session');
   }
 
-  console.log("Session created:", data)
+  console.log('Session created:', data);
   return data.id;
-}
+};
