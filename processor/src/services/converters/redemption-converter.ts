@@ -1,0 +1,27 @@
+import { RedemptionsRedeemStackableResponse } from '../../clients/types/redemptions';
+
+import { RedeemResponseDTO } from '../../dtos/voucherify-giftcards.dto';
+import { VoucherifyApiError, VoucherifyCustomError } from '../../errors/voucherify-api.error';
+import { Payment } from '@commercetools/connect-payments-sdk';
+
+export class RedemptionConverter {
+  public convertVoucherifyResultCode(resultCode: string) {
+    if (resultCode === 'SUCCESS') {
+      return 'Success';
+    } else if (resultCode === 'FAILURE') {
+      return 'Failure';
+    }
+    return 'Initial';
+  }
+
+  public convert(
+    opts: { redemptionResult: RedemptionsRedeemStackableResponse; createPaymentResult: Payment } | undefined,
+  ): RedeemResponseDTO {
+    const redemptionResultObj = opts?.redemptionResult.redemptions[0];
+    return {
+      result: this.convertVoucherifyResultCode(redemptionResultObj?.result || ''),
+      paymentId: opts?.createPaymentResult.id || '',
+      redemptionId: redemptionResultObj?.id || '',
+    };
+  }
+}

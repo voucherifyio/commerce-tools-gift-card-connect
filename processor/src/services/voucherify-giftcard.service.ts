@@ -21,11 +21,16 @@ import { BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '.
 import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-api.error';
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
+import { RedemptionConverter } from './converters/redemption-converter';
 import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fastify/context/context';
 
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
-import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
+import {
+  Redemption,
+  RedemptionsRedeemStackableParams,
+  RedemptionsRedeemStackableResponse,
+} from '../clients/types/redemptions';
 import { PaymentDraft, Cart } from '@commercetools/connect-payments-sdk';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -39,9 +44,11 @@ export type VoucherifyGiftCardServiceOptions = {
 
 export class VoucherifyGiftCardService extends AbstractGiftCardService {
   private balanceConverter: BalanceConverter;
+  private redemptionConverter: RedemptionConverter;
   constructor(opts: VoucherifyGiftCardServiceOptions) {
     super(opts.ctCartService, opts.ctPaymentService, opts.ctOrderService);
     this.balanceConverter = new BalanceConverter();
+    this.redemptionConverter = new RedemptionConverter();
   }
 
   /**
@@ -201,15 +208,9 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         redemptionsRedeemStackableParams,
       );
 
-      const redemptionResultObj = redemptionResult.redemptions[0];
-
       const paymentDraft: PaymentDraft = this.preparePaymentDraft(redemptionResult, ctCart);
       const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
-      return Promise.resolve({
-        result: this.convertVoucherifyResultCode(redemptionResultObj.result),
-        paymentId: ctPayment.id,
-        redemptionId: redemptionResultObj.id,
-      });
+      return this.redemptionConverter.convert({ redemptionResult, createPaymentResult: ctPayment });
     } catch (err) {
       log.error('Error in giftcard redemption', { error: err });
 
@@ -322,13 +323,5 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         },
       ],
     };
-  }
-  private convertVoucherifyResultCode(resultCode: string) {
-    if (resultCode === 'SUCCESS') {
-      return 'Success';
-    } else if (resultCode === 'FAILURE') {
-      return 'Failure';
-    }
-    return 'Initial';
   }
 }
