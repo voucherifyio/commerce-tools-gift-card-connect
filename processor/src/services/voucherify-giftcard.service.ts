@@ -205,7 +205,6 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
 
       const paymentDraft: PaymentDraft = this.preparePaymentDraft(redemptionResult, ctCart);
       const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
-      console.log(JSON.stringify(ctPayment));
       return Promise.resolve({
         result: this.convertVoucherifyResultCode(redemptionResultObj.result),
         paymentId: ctPayment.id,
