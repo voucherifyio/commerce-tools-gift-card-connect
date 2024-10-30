@@ -2,6 +2,9 @@ export interface GiftCardComponent {
   submit(opts: { amount?: Amount }): void;
   balance(): Promise<BalanceType>;
   mount(selector: string): void;
+  getState?(): {
+    code?: string;
+  }
 }
 
 export type Amount = {
@@ -16,6 +19,7 @@ export interface GiftCardBuilder {
 export type GiftCardOptions = {
   onGiftCardReady?: () => Promise<void>;
   onGiftCardSubmit?: () => Promise<void>;
+  onChange?: (isDirty: boolean) => void;
 };
 
 export type BaseOptions = {
@@ -24,7 +28,6 @@ export type BaseOptions = {
   locale?: string;
   onComplete?: (result: PaymentResult) => void;
   onError?: (error: any) => void;
-  onChange?: () => boolean;
 };
 
 export type BalanceType = {
@@ -47,7 +50,6 @@ export type EnablerOptions = {
   locale?: string;
   onComplete?: (result: PaymentResult) => void;
   onError?: (error: any) => void;
-  onChange?: () => boolean;
 };
 
 export type PaymentResult =

@@ -168,7 +168,18 @@
             });
 
             const builder = await enabler.createGiftCardBuilder();
-            const component = await builder.build(); //TODO: pass the onGiftcardready and onGiftcardsubmit functions here
+            const component = await builder.build({
+              onGiftCardReady: () => {
+                console.log('ready')
+              },
+              onGiftCardSubmit: () => {
+                console.log('submitted')
+              },
+              // If onGiftCardSubmit is defined, connector passes control of submission to it.
+              onChange: (isDirty) => {
+                console.log(isDirty)
+              }
+            });
 
             // Mount container component
             component.mount("#mountContainer");
