@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrdersCreateResponse, OrdersCreate } from './orders';
-import { RewardsCreateResponse } from './rewards';
 import { CustomersCreateBody, SimpleCustomer } from './customers';
 import { VouchersResponse } from './vouchers';
-
 import { ValidationSessionParams } from './validate-session';
 import {
   StackableOptions,
@@ -11,7 +9,6 @@ import {
   StackableRedeemableParams,
   StackableRedeemableSkippedResponse,
 } from './stackable';
-import { PromotionTierRedeemDetailsSimple, PromotionTierRedeemDetails } from './promotion-tiers';
 
 export interface RedemptionsRedeemResponse {
   id: string;
@@ -24,15 +21,10 @@ export interface RedemptionsRedeemResponse {
   result: 'SUCCESS' | 'FAILURE';
   voucher: VouchersResponse;
   customer?: SimpleCustomer;
-  reward?: RewardsCreateResponse;
   related_object_type: 'voucher';
   gift?: {
     amount: number;
   };
-  loyalty_card?: {
-    points: number;
-  };
-  promotion_tier?: PromotionTierRedeemDetailsSimple | PromotionTierRedeemDetails;
   failure_code?: string;
   failure_message?: string;
 }
