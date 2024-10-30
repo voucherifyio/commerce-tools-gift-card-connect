@@ -1,7 +1,6 @@
 import { RedemptionsRedeemStackableResponse } from '../../clients/types/redemptions';
 
 import { RedeemResponseDTO } from '../../dtos/voucherify-giftcards.dto';
-import { VoucherifyApiError, VoucherifyCustomError } from '../../errors/voucherify-api.error';
 import { Payment } from '@commercetools/connect-payments-sdk';
 
 export class RedemptionConverter {

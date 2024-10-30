@@ -26,11 +26,7 @@ import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fa
 
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
-import {
-  Redemption,
-  RedemptionsRedeemStackableParams,
-  RedemptionsRedeemStackableResponse,
-} from '../clients/types/redemptions';
+import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
 import { PaymentDraft, Cart } from '@commercetools/connect-payments-sdk';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -319,7 +315,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
             fractionDigits: 2,
           },
           interactionId: redemptionResultObj.id,
-          state: this.convertVoucherifyResultCode(redemptionResultObj.result),
+          state: this.redemptionConverter.convertVoucherifyResultCode(redemptionResultObj.result),
         },
       ],
     };
