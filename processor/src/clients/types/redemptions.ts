@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrdersCreateResponse, OrdersCreate } from './orders';
-import { RewardsCreateResponse, RewardRedemptionParams } from './rewards';
+import { RewardsCreateResponse } from './rewards';
 import { CustomersCreateBody, SimpleCustomer } from './customers';
 import { VouchersResponse } from './vouchers';
-import { GiftRedemptionParams } from './gift';
-import { ValidationSessionParams, ValidationSessionReleaseParams } from './validate-session';
+
+import { ValidationSessionParams } from './validate-session';
 import {
   StackableOptions,
   StackableRedeemableInapplicableResponse,
@@ -12,16 +12,6 @@ import {
   StackableRedeemableSkippedResponse,
 } from './stackable';
 import { PromotionTierRedeemDetailsSimple, PromotionTierRedeemDetails } from './promotion-tiers';
-
-export interface RedemptionsRedeemBody {
-  tracking_id?: string;
-  customer?: Omit<SimpleCustomer, 'id'> & { description?: string; id?: string };
-  order?: Pick<Partial<OrdersCreateResponse>, 'id' | 'source_id' | 'amount' | 'items' | 'status' | 'metadata'>;
-  metadata?: Record<string, any>;
-  reward?: RewardRedemptionParams;
-  gift?: GiftRedemptionParams;
-  session?: ValidationSessionReleaseParams;
-}
 
 export interface RedemptionsRedeemResponse {
   id: string;
@@ -45,18 +35,6 @@ export interface RedemptionsRedeemResponse {
   promotion_tier?: PromotionTierRedeemDetailsSimple | PromotionTierRedeemDetails;
   failure_code?: string;
   failure_message?: string;
-}
-
-export interface RedemptionsListParams {
-  limit?: number;
-  page?: number;
-  result?: 'SUCCESS' | 'FAILURE';
-  campaign?: string;
-  customer?: string;
-  created_at?: {
-    before?: string;
-    after?: string;
-  };
 }
 
 export interface Redemption {
@@ -91,23 +69,6 @@ export interface Redemption {
   };
 }
 
-export interface RedemptionsListResponse {
-  object: 'list';
-  total: number;
-  data_ref: 'redemptions';
-  redemptions: (Redemption | SimpleRollback)[];
-}
-
-export interface RedemptionsGetForVoucherResponse {
-  object: 'list';
-  total: number;
-  data_ref: string;
-  quantity: number;
-  redeemed_quantity?: number;
-  redeemed_amount?: number;
-  redemption_entries?: (Redemption | SimpleRollback)[];
-}
-
 export interface RedemptionsRollbackParams {
   reason?: string;
   tracking_id?: string;
@@ -140,26 +101,6 @@ export interface RedemptionsRollbackResponse {
     object: 'reward';
   };
 }
-
-export type SimpleRollback = Pick<
-  RedemptionsRollbackResponse,
-  'id' | 'object' | 'date' | 'customer_id' | 'tracking_id' | 'redemption' | 'result' | 'customer'
-> & {
-  related_object_type: 'voucher';
-  voucher: {
-    id: string;
-    object: 'voucher';
-    code: string;
-    campaign?: string;
-    campaign_id?: string;
-  };
-  gift?: {
-    amount: number;
-  };
-  loyalty_card?: {
-    points: number;
-  };
-};
 
 export interface RedemptionsRedeemStackableParams {
   options?: StackableOptions;
@@ -207,20 +148,4 @@ export interface RedemptionsRedeemStackableResponse {
   order?: RedemptionsRedeemStackableOrderResponse;
   skipped_redeemables?: StackableRedeemableSkippedResponse;
   inapplicable_redeemables?: StackableRedeemableInapplicableResponse;
-}
-
-export interface RedemptionsRollbackStackableResponse {
-  rollbacks: RedemptionsRedeemStackableRedemptionResult[];
-  parent_rollback: {
-    id: string;
-    date: string;
-    customer_id?: string;
-    tracking_id?: string;
-    metadata?: Record<string, any>;
-    result: 'SUCCESS' | 'FAILURE';
-    order?: OrdersCreateResponse;
-    customer?: SimpleCustomer;
-    redemption: string;
-  };
-  order?: RedemptionsRedeemStackableOrderResponse;
 }
