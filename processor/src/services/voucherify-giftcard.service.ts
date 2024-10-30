@@ -154,7 +154,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     });
 
     let redeemAmount = opts.data.redeemAmount;
-    let balance = opts.data.balance;
+    const balance = opts.data.balance;
     const redeemCode = opts.data.code;
 
     try {
@@ -164,18 +164,17 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
           code: 400,
           key: 'AmountNotSpecified',
         });
-      } 
+      }
       if (!redeemAmount && balance && balance.centAmount > ctCart.totalPrice.centAmount) {
         redeemAmount = {
-          centAmount : ctCart.totalPrice.centAmount,
-          currencyCode : getConfig().voucherifyCurrency
-        }
-      } 
-      else if (!redeemAmount && balance && balance.centAmount <= ctCart.totalPrice.centAmount) {
+          centAmount: ctCart.totalPrice.centAmount,
+          currencyCode: getConfig().voucherifyCurrency,
+        };
+      } else if (!redeemAmount && balance && balance.centAmount <= ctCart.totalPrice.centAmount) {
         redeemAmount = {
-          centAmount : balance.centAmount,
-          currencyCode : getConfig().voucherifyCurrency
-        }
+          centAmount: balance.centAmount,
+          currencyCode: getConfig().voucherifyCurrency,
+        };
       }
 
       if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
@@ -206,7 +205,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
 
       const paymentDraft: PaymentDraft = this.preparePaymentDraft(redemptionResult, ctCart);
       const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
-
+      console.log(JSON.stringify(ctPayment));
       return Promise.resolve({
         result: this.convertVoucherifyResultCode(redemptionResultObj.result),
         paymentId: ctPayment.id,
@@ -287,7 +286,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
 
   private preparePaymentDraft(redemptionResult: RedemptionsRedeemStackableResponse, ctCart: Cart): PaymentDraft {
     const redemptionResultObj = redemptionResult.redemptions[0];
-    console.log(redemptionResultObj);
+
     return {
       interfaceId: redemptionResultObj.id,
       amountPlanned: {
