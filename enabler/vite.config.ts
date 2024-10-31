@@ -3,6 +3,13 @@ import { defineConfig } from 'vite';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 
 export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+      },
+    },
+  },
   plugins: [cssInjectedByJsPlugin()],
   build: {
     outDir: resolve(__dirname, 'public'),
