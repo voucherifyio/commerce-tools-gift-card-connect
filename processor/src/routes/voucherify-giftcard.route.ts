@@ -9,8 +9,10 @@ import {
   BalanceResponseSchemaDTO,
   RedeemRequestDTO,
   RedeemResponseDTO,
+  RedeemResponseSchema,
 } from '../dtos/voucherify-giftcards.dto';
 import { Type } from '@sinclair/typebox';
+import { AmountSchema } from '../dtos/operations/payment-intents.dto';
 
 type RoutesOptions = {
   giftCardService: VoucherifyGiftCardService;
@@ -49,6 +51,30 @@ export const voucherifyGiftCardServiceRoutes = async (
     '/redemption',
     {
       preHandler: [opts.sessionHeaderAuthHook.authenticate()],
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            code: Type.String(),
+            balance: Type.Optional(AmountSchema),
+            redeemAmount: Type.Optional(AmountSchema),
+          },
+          required: ['code'],
+          if: {
+            properties: {
+              balance: {
+                const: {},
+              },
+            },
+          },
+          then: {
+            required: ['redeemAmount'],
+          },
+        },
+        response: {
+          200: RedeemResponseSchema,
+        },
+      },
     },
     async (request, reply) => {
       const res = await opts.giftCardService.redeem({

@@ -161,13 +161,6 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     const redeemCode = opts.data.code;
 
     try {
-      if (!redeemAmount && !balance) {
-        throw new VoucherifyCustomError({
-          message: 'no redeem amount and current giftcard balance have been provided',
-          code: 400,
-          key: 'AmountNotSpecified',
-        });
-      }
       if (!redeemAmount && balance && balance.centAmount > ctCart.totalPrice.centAmount) {
         redeemAmount = {
           centAmount: ctCart.totalPrice.centAmount,

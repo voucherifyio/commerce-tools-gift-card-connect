@@ -149,21 +149,6 @@ describe('voucherify-giftcard.service', () => {
     expect(result.paymentId).toStrictEqual('24680');
   });
 
-  test('redeem fail without balance and redeem amount', async () => {
-    setupMockConfig({ voucherifyCurrency: 'USD' });
-    try {
-      await giftcardService.redeem({
-        data: {
-          code: '123456',
-        },
-      });
-    } catch (error) {
-      expect(error).toBeInstanceOf(VoucherifyCustomError);
-      const voucherifyCustomError = error as VoucherifyCustomError;
-      expect(voucherifyCustomError.code).toEqual('AmountNotSpecified');
-    }
-  });
-
   test('redeem fail with redeem amount in EUR', async () => {
     setupMockConfig({ voucherifyCurrency: 'USD' });
     try {
