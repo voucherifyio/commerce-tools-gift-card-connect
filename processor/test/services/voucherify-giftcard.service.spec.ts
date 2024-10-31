@@ -116,9 +116,12 @@ describe('voucherify-giftcard.service', () => {
     mockServer.use(mockRequest('https://api.voucherify.io', `/v1/redemptions`, 200, redeemVouchersOk));
 
     jest.spyOn(DefaultPaymentService.prototype, 'createPayment').mockResolvedValue(createPaymentResultOk);
+    jest.spyOn(DefaultCartService.prototype, 'addPayment').mockResolvedValue(getCartOK());
+    jest.spyOn(DefaultPaymentService.prototype, 'updatePayment').mockResolvedValue(updatePaymentResultOk);
+
     const result = await giftcardService.redeem({
       data: {
-        code: '123456',
+        code: '34567',
         redeemAmount: {
           centAmount: 1,
           currencyCode: 'USD',
@@ -127,37 +130,22 @@ describe('voucherify-giftcard.service', () => {
     });
     expect(result.result).toStrictEqual('Success');
     expect(result.redemptionId).toStrictEqual('REDEMPTION_ID');
-    expect(result.paymentId).toStrictEqual('24680');
+    expect(result.paymentId).toStrictEqual('123456');
   });
 
-  test('redeem OK with balance and without redeem amount', async () => {
-    setupMockConfig({ voucherifyCurrency: 'USD' });
+  test('redeem not OK', async () => {
+    setupMockConfig({ voucherifyCurrency: 'EUR' });
     mockServer.use(mockRequest('https://api.voucherify.io', `/v1/redemptions`, 200, redeemVouchersOk));
 
-    jest.spyOn(DefaultPaymentService.prototype, 'createPayment').mockResolvedValue(createPaymentResultOk);
-    const result = await giftcardService.redeem({
-      data: {
-        code: '123456',
-        balance: {
-          centAmount: 1,
-          currencyCode: 'USD',
-        },
-      },
-    });
-    expect(result.result).toStrictEqual('Success');
-    expect(result.redemptionId).toStrictEqual('REDEMPTION_ID');
-    expect(result.paymentId).toStrictEqual('24680');
-  });
+    jest.spyOn(DefaultCartService.prototype, 'getCart').mockResolvedValue(getCartOK());
 
-  test('redeem fail with redeem amount in EUR', async () => {
-    setupMockConfig({ voucherifyCurrency: 'USD' });
     try {
-      await giftcardService.redeem({
+      const result = await giftcardService.redeem({
         data: {
-          code: '123456',
+          code: '34567',
           redeemAmount: {
             centAmount: 1,
-            currencyCode: 'EUR',
+            currencyCode: 'USD',
           },
         },
       });

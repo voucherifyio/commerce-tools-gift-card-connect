@@ -27,7 +27,7 @@ import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fa
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
 import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
-import { PaymentDraft, Cart } from '@commercetools/connect-payments-sdk';
+import { PaymentDraft, Cart, Payment } from '@commercetools/connect-payments-sdk';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -152,35 +152,30 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
   }
 
   async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
-    const ctCart = await this.ctCartService.getCart({
+    let ctCart = await this.ctCartService.getCart({
       id: getCartIdFromContext(),
     });
 
-    let redeemAmount = opts.data.redeemAmount;
-    const balance = opts.data.balance;
+    const redeemAmount = opts.data.redeemAmount;
     const redeemCode = opts.data.code;
 
     try {
-      if (!redeemAmount && balance && balance.centAmount > ctCart.totalPrice.centAmount) {
-        redeemAmount = {
-          centAmount: ctCart.totalPrice.centAmount,
-          currencyCode: getConfig().voucherifyCurrency,
-        };
-      } else if (!redeemAmount && balance && balance.centAmount <= ctCart.totalPrice.centAmount) {
-        redeemAmount = {
-          centAmount: balance.centAmount,
-          currencyCode: getConfig().voucherifyCurrency,
-        };
-      }
-
-      if (getConfig().voucherifyCurrency !== redeemAmount?.currencyCode) {
+      if (getConfig().voucherifyCurrency !== redeemAmount.currencyCode) {
         throw new VoucherifyCustomError({
           message: 'cart and gift card currency do not match',
           code: 400,
           key: 'CurrencyNotMatch',
         });
       }
+      const payment = await this.createPayment(redeemAmount.centAmount, ctCart);
 
+      ctCart = await this.ctCartService.addPayment({
+        resource: {
+          id: ctCart.id,
+          version: ctCart.version,
+        },
+        paymentId: payment.id,
+      });
       const redemptionsRedeemStackableParams: RedemptionsRedeemStackableParams = {
         redeemables: [
           {
@@ -200,9 +195,9 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         redemptionsRedeemStackableParams,
       );
 
-      const paymentDraft: PaymentDraft = this.preparePaymentDraft(redemptionResult, ctCart);
-      const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
-      return this.redemptionConverter.convert({ redemptionResult, createPaymentResult: ctPayment });
+      const updatedPayment = await this.updatePayment(payment, redemptionResult);
+
+      return this.redemptionConverter.convert({ redemptionResult, createPaymentResult: updatedPayment });
     } catch (err) {
       log.error('Error in giftcard redemption', { error: err });
 
@@ -276,15 +271,12 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     };
   }
 
-  private preparePaymentDraft(redemptionResult: RedemptionsRedeemStackableResponse, ctCart: Cart): PaymentDraft {
-    const redemptionResultObj = redemptionResult.redemptions[0];
-
-    return {
-      interfaceId: redemptionResultObj.id,
+  private async createPayment(redeemAmountInCent: number, ctCart: Cart): Promise<Payment> {
+    const paymentDraft: PaymentDraft = {
       amountPlanned: {
         type: 'centPrecision',
         currencyCode: getConfig().voucherifyCurrency,
-        centAmount: redemptionResultObj.order?.amount,
+        centAmount: redeemAmountInCent,
         fractionDigits: 2,
       },
       paymentMethodInfo: {
@@ -301,19 +293,31 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         ctCart.anonymousId && {
           anonymousId: ctCart.anonymousId,
         }),
-      transactions: [
-        {
-          type: this.getPaymentTransactionType('capturePayment'),
-          amount: {
-            centAmount: redemptionResultObj.order?.amount,
-            type: 'centPrecision',
-            currencyCode: getConfig().voucherifyCurrency,
-            fractionDigits: 2,
-          },
-          interactionId: redemptionResultObj.id,
-          state: this.redemptionConverter.convertVoucherifyResultCode(redemptionResultObj.result),
-        },
-      ],
+      transactions: [],
     };
+    const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
+    return ctPayment;
+  }
+
+  private async updatePayment(
+    payment: Payment,
+    redemptionResult: RedemptionsRedeemStackableResponse,
+  ): Promise<Payment> {
+    const redemptionResultObj = redemptionResult.redemptions[0];
+    const updatePaymentOpts = {
+      id: payment.id,
+      // TODO: modify updatePayment function in payment-sdk to support interfaceId
+      // interfaceId : redemptionResultObj.id
+      transaction: {
+        type: this.getPaymentTransactionType('capturePayment'),
+        amount: {
+          centAmount: redemptionResultObj.amount as number,
+          currencyCode: getConfig().voucherifyCurrency,
+        },
+        interactionId: redemptionResultObj.id,
+        state: this.redemptionConverter.convertVoucherifyResultCode(redemptionResultObj.result),
+      },
+    };
+    return await this.ctPaymentService.updatePayment(updatePaymentOpts);
   }
 }

@@ -14,6 +14,7 @@ export interface RedemptionsRedeemResponse {
   id: string;
   object: 'redemption';
   date?: string;
+  amount?: number;
   customer_id?: string;
   tracking_id?: string;
   order?: OrdersCreateResponse;

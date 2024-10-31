@@ -8,8 +8,8 @@ import {
   BalanceResponseSchema,
   BalanceResponseSchemaDTO,
   RedeemRequestDTO,
-  RedeemResponseDTO,
   RedeemResponseSchema,
+  RedeemResponseDTO,
 } from '../dtos/voucherify-giftcards.dto';
 import { Type } from '@sinclair/typebox';
 import { AmountSchema } from '../dtos/operations/payment-intents.dto';
@@ -56,20 +56,9 @@ export const voucherifyGiftCardServiceRoutes = async (
           type: 'object',
           properties: {
             code: Type.String(),
-            balance: Type.Optional(AmountSchema),
-            redeemAmount: Type.Optional(AmountSchema),
+            redeemAmount: AmountSchema,
           },
-          required: ['code'],
-          if: {
-            properties: {
-              balance: {
-                const: {},
-              },
-            },
-          },
-          then: {
-            required: ['redeemAmount'],
-          },
+          required: ['code', 'redeemAmount'],
         },
         response: {
           200: RedeemResponseSchema,
