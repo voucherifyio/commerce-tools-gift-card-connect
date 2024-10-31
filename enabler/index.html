@@ -169,11 +169,12 @@
 
             const builder = await enabler.createGiftCardBuilder();
             const component = await builder.build({
-              onGiftCardReady: () => {
-                console.log('ready')
+              onGiftCardReady: async () => {
+                console.log('ready!')
+                return Promise.resolve()
               },
-              onGiftCardSubmit: () => {
-                console.log('submitted')
+              onGiftCardSubmit: async () => {
+                Promise.reject('some-error')
               },
               // If onGiftCardSubmit is defined, connector passes control of submission to it.
               onChange: (isDirty) => {

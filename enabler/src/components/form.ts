@@ -49,8 +49,14 @@ export class FormComponent extends DefaultComponent {
 
   submit(_: { amount?: Amount }): void {
     if (this.giftcardOptions?.onGiftCardSubmit) {
-      this.giftcardOptions.onGiftCardSubmit();
-      return
+      this.giftcardOptions
+        .onGiftCardSubmit()
+        .then() // Not sure at this time what we do with the response here
+        .catch((err) => {
+          this.baseOptions.onError(err);
+          throw err;
+        });
+      return;
     }
     // TODO: Implement call to /redeem https://commercetools.atlassian.net/browse/SCC-2621
     return null;
@@ -60,7 +66,13 @@ export class FormComponent extends DefaultComponent {
     document.querySelector(selector).insertAdjacentHTML('afterbegin', this._getField());
     addFormFieldsEventListeners(this.giftcardOptions);
 
-    this.giftcardOptions?.onGiftCardReady?.();
+    this.giftcardOptions
+      ?.onGiftCardReady?.()
+      .then()
+      .catch((err) => {
+        this.baseOptions.onError(err);
+        throw err;
+      });
   }
 
   private _getField() {
@@ -79,9 +91,9 @@ export class FormComponent extends DefaultComponent {
     `;
   }
 
-  getState(): { code?: string; } {
+  getState(): { code?: string } {
     return {
-      code: getInput(fieldIds.code).value.replace(/\s/g, '')
-    }
+      code: getInput(fieldIds.code).value.replace(/\s/g, ''),
+    };
   }
 }
