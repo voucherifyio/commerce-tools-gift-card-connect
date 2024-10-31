@@ -193,10 +193,13 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
           {
             object: 'voucher',
             id: redeemCode,
+            gift: {
+              credits: redeemAmount.centAmount,
+            },
           },
         ],
         order: {
-          amount: redeemAmount.centAmount,
+          amount: ctCart.totalPrice.centAmount,
         },
       };
 

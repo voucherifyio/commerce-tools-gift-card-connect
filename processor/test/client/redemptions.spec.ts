@@ -34,10 +34,13 @@ describe('Redemptions API', () => {
           {
             object: 'voucher',
             id: '123456',
+            gift: {
+              credits: 100,
+            },
           },
         ],
         order: {
-          amount: 1,
+          amount: 2000,
         },
       };
       mockServer.use(mockRequest('https://api.voucherify.io', `/v1/redemptions`, 200, redeemVouchersOk));
