@@ -19,7 +19,13 @@ import * as Config from '../../src/config/config';
 import { mockRequest } from '../mocks/utils';
 import { ModifyPayment, StatusResponse } from '../../src/services/types/operation.type';
 import { DefaultCartService } from '@commercetools/connect-payments-sdk/dist/commercetools/services/ct-cart.service';
-import { getCartOK, getPaymentResultOk, updatePaymentResultOk, createPaymentResultOk, getCartAmount } from '../mocks/coco';
+import {
+  getCartOK,
+  getPaymentResultOk,
+  updatePaymentResultOk,
+  createPaymentResultOk,
+  getCartAmount,
+} from '../mocks/coco';
 import { DefaultPaymentService } from '@commercetools/connect-payments-sdk/dist/commercetools/services/ct-payment.service';
 import { VoucherifyCustomError } from '../../src/errors/voucherify-api.error';
 interface FlexibleConfig {
@@ -116,7 +122,7 @@ describe('voucherify-giftcard.service', () => {
     mockServer.use(mockRequest('https://api.voucherify.io', `/v1/redemptions`, 200, redeemVouchersOk));
 
     jest.spyOn(DefaultPaymentService.prototype, 'createPayment').mockResolvedValue(createPaymentResultOk);
-    
+
     jest.spyOn(DefaultCartService.prototype, 'getPaymentAmount').mockResolvedValue(getCartAmount);
     jest.spyOn(DefaultCartService.prototype, 'addPayment').mockResolvedValue(getCartOK());
     jest.spyOn(DefaultPaymentService.prototype, 'updatePayment').mockResolvedValue(updatePaymentResultOk);
@@ -142,7 +148,7 @@ describe('voucherify-giftcard.service', () => {
     jest.spyOn(DefaultCartService.prototype, 'getCart').mockResolvedValue(getCartOK());
 
     try {
-      const result = await giftcardService.redeem({
+      await giftcardService.redeem({
         data: {
           code: '34567',
           redeemAmount: {
