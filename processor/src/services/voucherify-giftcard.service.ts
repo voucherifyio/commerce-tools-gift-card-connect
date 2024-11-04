@@ -155,12 +155,12 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     let ctCart = await this.ctCartService.getCart({
       id: getCartIdFromContext(),
     });
-
+    const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
     const redeemAmount = opts.data.redeemAmount;
     const redeemCode = opts.data.code;
 
     try {
-      if (getConfig().voucherifyCurrency !== redeemAmount.currencyCode) {
+      if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
         throw new VoucherifyCustomError({
           message: 'cart and gift card currency do not match',
           code: 400,
@@ -187,7 +187,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
           },
         ],
         order: {
-          amount: ctCart.totalPrice.centAmount,
+          amount: amountPlanned.centAmount,
         },
       };
 
