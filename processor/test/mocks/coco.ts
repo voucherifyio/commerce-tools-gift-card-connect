@@ -51,13 +51,6 @@ export const getCartOK = () => {
   return mockGetCartResult;
 };
 
-export const getCartAmount: Amount = {
-    type: 'centPrecision',
-    currencyCode: 'GBP',
-    centAmount: 120000,
-    fractionDigits: 2,
-  
-}
 export const getPaymentResultOk: Payment = {
   id: '123456',
   version: 1,

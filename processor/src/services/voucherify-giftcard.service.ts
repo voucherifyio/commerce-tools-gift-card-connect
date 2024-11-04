@@ -152,7 +152,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
   }
 
   async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
-    const ctCart = await this.ctCartService.getCart({
+    let ctCart = await this.ctCartService.getCart({
       id: getCartIdFromContext(),
     });
 
@@ -169,14 +169,13 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
       }
       const payment = await this.createPayment(redeemAmount.centAmount, ctCart);
 
-      await this.ctCartService.addPayment({
+      ctCart = await this.ctCartService.addPayment({
         resource: {
           id: ctCart.id,
           version: ctCart.version,
         },
         paymentId: payment.id,
       });
-      const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
       const redemptionsRedeemStackableParams: RedemptionsRedeemStackableParams = {
         redeemables: [
           {
@@ -188,7 +187,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
           },
         ],
         order: {
-          amount: amountPlanned.centAmount,
+          amount: ctCart.totalPrice.centAmount,
         },
       };
 
