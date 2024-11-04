@@ -160,8 +160,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     const redeemCode = opts.data.code;
 
     try {
-      const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
-      if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
+      if (getConfig().voucherifyCurrency !== redeemAmount.currencyCode) {
         throw new VoucherifyCustomError({
           message: 'cart and gift card currency do not match',
           code: 400,
@@ -177,7 +176,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         },
         paymentId: payment.id,
       });
-
+      const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
       const redemptionsRedeemStackableParams: RedemptionsRedeemStackableParams = {
         redeemables: [
           {
