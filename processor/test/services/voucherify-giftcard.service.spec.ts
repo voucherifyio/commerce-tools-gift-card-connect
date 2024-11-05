@@ -140,7 +140,7 @@ describe('voucherify-giftcard.service', () => {
     jest.spyOn(DefaultCartService.prototype, 'getCart').mockResolvedValue(getCartOK());
 
     try {
-      await giftcardService.redeem({
+      const result = await giftcardService.redeem({
         data: {
           code: '34567',
           redeemAmount: {
