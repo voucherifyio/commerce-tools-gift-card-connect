@@ -306,7 +306,6 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     const redemptionResultObj = redemptionResult.redemptions[0];
     const updatePaymentOpts = {
       id: payment.id,
-      // TODO: modify updatePayment function in payment-sdk to support interfaceId
       // interfaceId : redemptionResultObj.id
       transaction: {
         type: this.getPaymentTransactionType('capturePayment'),
