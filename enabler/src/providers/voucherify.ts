@@ -18,10 +18,6 @@ export class VoucherifyEnabler implements GiftCardEnabler {
     console.log('onSubmit', result);
   };
 
-  private static onChange = () => {
-    return null;
-  };
-
   private static _Setup = async (options: EnablerOptions): Promise<{ baseOptions: BaseOptions }> => {
     // HINT: config calls can be done here, to be used if necessary in the enabler
 
@@ -32,7 +28,6 @@ export class VoucherifyEnabler implements GiftCardEnabler {
         locale: options.locale,
         onComplete: options.onComplete ? options.onComplete : this.onComplete,
         onError: options.onError ? options.onError : this.onError,
-        onChange: options.onChange ? options.onChange : this.onChange,
       },
     };
   };

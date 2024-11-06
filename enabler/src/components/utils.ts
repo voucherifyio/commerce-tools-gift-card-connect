@@ -1,3 +1,4 @@
+import { GiftCardOptions } from '../providers/definitions';
 import inputFieldStyles from '../style/inputField.module.scss';
 
 export const getInput = (field: string) => document.querySelector(`#${field}`) as HTMLInputElement;
@@ -49,10 +50,26 @@ const handleFieldValidation = (field: string) => {
   });
 };
 
-const addGiftcardCodeEventListeners = () => {
-  handleFieldValidation(fieldIds.code);
-};
+const handleChangeEvent = (field: string, onChange?: (isDirty: boolean) => void) => {
+  const input = getInput(field);
+  if (input) {
+    let isDirty = false;
 
-export const addFormFieldsEventListeners = () => {
-  addGiftcardCodeEventListeners();
+    input.addEventListener('input', () => {
+      if (!isDirty && input.value !== '') {
+        isDirty = true
+
+        onChange?.(isDirty);
+      } else if (isDirty && input.value === '') {
+        isDirty = false
+
+        onChange?.(isDirty);
+      }
+    })
+  }
+}
+
+export const addFormFieldsEventListeners = (giftcardOptions: GiftCardOptions) => {
+  handleFieldValidation(fieldIds.code);
+  handleChangeEvent(fieldIds.code, giftcardOptions?.onChange)
 };
