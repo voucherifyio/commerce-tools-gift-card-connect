@@ -57,19 +57,19 @@ const handleChangeEvent = (field: string, onChange?: (isDirty: boolean) => void)
 
     input.addEventListener('input', () => {
       if (!isDirty && input.value !== '') {
-        isDirty = true
+        isDirty = true;
 
         onChange?.(isDirty);
       } else if (isDirty && input.value === '') {
-        isDirty = false
+        isDirty = false;
 
         onChange?.(isDirty);
       }
-    })
+    });
   }
-}
+};
 
 export const addFormFieldsEventListeners = (giftcardOptions: GiftCardOptions) => {
   handleFieldValidation(fieldIds.code);
-  handleChangeEvent(fieldIds.code, giftcardOptions?.onChange)
+  handleChangeEvent(fieldIds.code, giftcardOptions?.onChange);
 };

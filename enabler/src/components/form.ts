@@ -1,4 +1,11 @@
-import { Amount, BalanceType, BaseOptions, GiftCardComponent, GiftCardOptions } from '../providers/definitions';
+import {
+  Amount,
+  BalanceType,
+  BaseOptions,
+  GiftCardComponent,
+  GiftCardOptions,
+  PaymentResult,
+} from '../providers/definitions';
 import { BaseComponentBuilder, DefaultComponent } from './definitions';
 import { addFormFieldsEventListeners, fieldIds, getInput } from './utils';
 import inputFieldStyles from '../style/inputField.module.scss';
@@ -47,7 +54,7 @@ export class FormComponent extends DefaultComponent {
     return null;
   }
 
-  submit(_: { amount?: Amount }): void {
+  async submit(params: { amount?: Amount }): Promise<void> {
     if (this.giftcardOptions?.onGiftCardSubmit) {
       this.giftcardOptions
         .onGiftCardSubmit()
@@ -56,10 +63,39 @@ export class FormComponent extends DefaultComponent {
           this.baseOptions.onError(err);
           throw err;
         });
-      return;
     }
-    // TODO: Implement call to /redeem https://commercetools.atlassian.net/browse/SCC-2621
-    return null;
+
+    try {
+      const giftCardCode = getInput(fieldIds.code).value.replace(/\s/g, '');
+      const requestBody = {
+        redeemAmount: params.amount,
+        code: giftCardCode,
+      };
+      const requestRedeemURL = this.baseOptions.processorUrl.endsWith('/')
+        ? `${this.baseOptions.processorUrl}redemption}`
+        : `${this.baseOptions.processorUrl}/redemption`;
+      const response = await fetch(requestRedeemURL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Id': this.baseOptions.sessionId,
+        },
+        body: JSON.stringify(requestBody),
+      });
+      const redeemResult = await response.json();
+      if (response.status !== 200) {
+        throw new Error(redeemResult.message);
+      }
+      const paymentResult: PaymentResult = {
+        isSuccess: redeemResult.result,
+        paymentReference: redeemResult.paymentId,
+      };
+
+      this.baseOptions.onComplete(paymentResult);
+    } catch (err) {
+      this.baseOptions.onError(err);
+    }
+    return;
   }
 
   mount(selector: string): void {
