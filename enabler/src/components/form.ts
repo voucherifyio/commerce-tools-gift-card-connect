@@ -47,11 +47,16 @@ export class FormComponent extends DefaultComponent {
         },
       });
 
-      return await response.json();
+      const jsonResponse = await response.json();
+
+      if (!response.ok) {
+        this.baseOptions.onError(jsonResponse);
+      }
+
+      return jsonResponse;
     } catch (err) {
       this.baseOptions.onError(err);
     }
-    return null;
   }
 
   async submit(params: { amount?: Amount }): Promise<void> {
@@ -72,8 +77,9 @@ export class FormComponent extends DefaultComponent {
         code: giftCardCode,
       };
       const requestRedeemURL = this.baseOptions.processorUrl.endsWith('/')
-        ? `${this.baseOptions.processorUrl}redemption}`
-        : `${this.baseOptions.processorUrl}/redemption`;
+        ? `${this.baseOptions.processorUrl}redeem}`
+        : `${this.baseOptions.processorUrl}/redeem`;
+
       const response = await fetch(requestRedeemURL, {
         method: 'POST',
         headers: {
@@ -82,13 +88,16 @@ export class FormComponent extends DefaultComponent {
         },
         body: JSON.stringify(requestBody),
       });
+
       const redeemResult = await response.json();
-      if (response.status !== 200) {
-        throw new Error(redeemResult.message);
+
+      if (!response.ok) {
+        throw redeemResult;
       }
+
       const paymentResult: PaymentResult = {
         isSuccess: redeemResult.result,
-        paymentReference: redeemResult.paymentId,
+        paymentReference: redeemResult.paymentReference,
       };
 
       this.baseOptions.onComplete(paymentResult);

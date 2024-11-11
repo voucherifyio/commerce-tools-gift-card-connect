@@ -27,7 +27,7 @@ import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fa
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
 import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
-import { PaymentDraft, Cart, Payment } from '@commercetools/connect-payments-sdk';
+import { VoucherifyError } from '../clients/voucherify.error';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -140,8 +140,24 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     } catch (err) {
       log.error('Error fetching gift card', { error: err });
 
-      if (err instanceof VoucherifyCustomError || err instanceof VoucherifyApiError) {
+      if (err instanceof VoucherifyCustomError) {
         throw err;
+      }
+
+      if (err instanceof VoucherifyError) {
+        throw new VoucherifyApiError(
+          {
+            code: err.code,
+            message: err.message,
+            key: err.key,
+          },
+          {
+            privateFields: {
+              details: err.details,
+            },
+            cause: err,
+          },
+        );
       }
 
       throw new ErrorGeneral('Internal Server Error', {
@@ -152,30 +168,50 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
   }
 
   async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
-    let ctCart = await this.ctCartService.getCart({
+    const ctCart = await this.ctCartService.getCart({
       id: getCartIdFromContext(),
     });
+
     const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
     const redeemAmount = opts.data.redeemAmount;
     const redeemCode = opts.data.code;
 
-    try {
-      if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
-        throw new VoucherifyCustomError({
-          message: 'cart and gift card currency do not match',
-          code: 400,
-          key: 'CurrencyNotMatch',
-        });
-      }
-      const payment = await this.createPayment(redeemAmount.centAmount, ctCart);
-
-      ctCart = await this.ctCartService.addPayment({
-        resource: {
-          id: ctCart.id,
-          version: ctCart.version,
-        },
-        paymentId: payment.id,
+    if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
+      throw new VoucherifyCustomError({
+        message: 'cart and gift card currency do not match',
+        code: 400,
+        key: 'CurrencyNotMatch',
       });
+    }
+
+    const ctPayment = await this.ctPaymentService.createPayment({
+      amountPlanned: redeemAmount,
+      paymentMethodInfo: {
+        paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
+        method: 'giftcard',
+      },
+      ...(ctCart.customerId && {
+        customer: {
+          typeId: 'customer',
+          id: ctCart.customerId,
+        },
+      }),
+      ...(!ctCart.customerId &&
+        ctCart.anonymousId && {
+          anonymousId: ctCart.anonymousId,
+        }),
+    });
+
+    await this.ctCartService.addPayment({
+      resource: {
+        id: ctCart.id,
+        version: ctCart.version,
+      },
+      paymentId: ctPayment.id,
+    });
+
+    let res!: RedemptionsRedeemStackableResponse;
+    try {
       const redemptionsRedeemStackableParams: RedemptionsRedeemStackableParams = {
         redeemables: [
           {
@@ -191,25 +227,48 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         },
       };
 
-      const redemptionResult: RedemptionsRedeemStackableResponse = await VoucherifyAPI().redemptions.redeemStackable(
-        redemptionsRedeemStackableParams,
-      );
-
-      const updatedPayment = await this.updatePayment(payment, redemptionResult);
-
-      return this.redemptionConverter.convert({ redemptionResult, createPaymentResult: updatedPayment });
+      res = await VoucherifyAPI().redemptions.redeemStackable(redemptionsRedeemStackableParams);
     } catch (err) {
       log.error('Error in giftcard redemption', { error: err });
 
-      if (err instanceof VoucherifyCustomError || err instanceof VoucherifyApiError) {
+      if (err instanceof VoucherifyCustomError) {
         throw err;
       }
 
+      if (err instanceof VoucherifyError) {
+        throw new VoucherifyApiError(
+          {
+            code: err.code,
+            message: err.message,
+            key: err.key,
+          },
+          {
+            privateFields: {
+              details: err.details,
+            },
+            cause: err,
+          },
+        );
+      }
+
       throw new ErrorGeneral('Internal Server Error', {
-        privateMessage: 'internal error making a call to voucherify and composable commerce',
+        privateMessage: 'internal error making a call to voucherify',
         cause: err,
       });
     }
+
+    const updatedPayment = await this.ctPaymentService.updatePayment({
+      id: ctPayment.id,
+      pspReference: res.redemptions[0].id,
+      transaction: {
+        type: 'Charge',
+        amount: ctPayment.amountPlanned,
+        interactionId: res.redemptions[0].id,
+        state: this.redemptionConverter.convertVoucherifyResultCode(res.redemptions[0].result),
+      },
+    });
+
+    return this.redemptionConverter.convert({ redemptionResult: res, createPaymentResult: updatedPayment });
   }
 
   /**
@@ -262,61 +321,36 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
       id: request.payment.id,
     });
     const redemptionId = ctPayment.interfaceId;
-    const rollbackResult = await VoucherifyAPI().redemptions.rollback(redemptionId as string);
 
-    return {
-      outcome:
-        rollbackResult.result === 'SUCCESS' ? PaymentModificationStatus.APPROVED : PaymentModificationStatus.REJECTED,
-      pspReference: rollbackResult.id,
-    };
-  }
+    try {
+      const rollbackResult = await VoucherifyAPI().redemptions.rollback(redemptionId as string);
 
-  private async createPayment(redeemAmountInCent: number, ctCart: Cart): Promise<Payment> {
-    const paymentDraft: PaymentDraft = {
-      amountPlanned: {
-        type: 'centPrecision',
-        currencyCode: getConfig().voucherifyCurrency,
-        centAmount: redeemAmountInCent,
-        fractionDigits: 2,
-      },
-      paymentMethodInfo: {
-        paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
-        method: 'giftcard',
-      },
-      ...(ctCart.customerId && {
-        customer: {
-          typeId: 'customer',
-          id: ctCart.customerId,
-        },
-      }),
-      ...(!ctCart.customerId &&
-        ctCart.anonymousId && {
-          anonymousId: ctCart.anonymousId,
-        }),
-      transactions: [],
-    };
-    const ctPayment = await this.ctPaymentService.createPayment(paymentDraft);
-    return ctPayment;
-  }
+      return {
+        outcome:
+          rollbackResult.result === 'SUCCESS' ? PaymentModificationStatus.APPROVED : PaymentModificationStatus.REJECTED,
+        pspReference: rollbackResult.id,
+      };
+    } catch (err) {
+      if (err instanceof VoucherifyError) {
+        throw new VoucherifyApiError(
+          {
+            code: err.code,
+            message: err.message,
+            key: err.key,
+          },
+          {
+            privateFields: {
+              details: err.details,
+            },
+            cause: err,
+          },
+        );
+      }
 
-  private async updatePayment(
-    payment: Payment,
-    redemptionResult: RedemptionsRedeemStackableResponse,
-  ): Promise<Payment> {
-    const redemptionResultObj = redemptionResult.redemptions[0];
-    const updatePaymentOpts = {
-      id: payment.id,
-      pspReference: redemptionResultObj.id,
-      transaction: {
-        type: this.getPaymentTransactionType('capturePayment'),
-        amount: {
-          centAmount: redemptionResultObj.amount as number,
-          currencyCode: getConfig().voucherifyCurrency,
-        },
-        interactionId: redemptionResultObj.id,
-        state: this.redemptionConverter.convertVoucherifyResultCode(redemptionResultObj.result),
-      },
-    };
-    return await this.ctPaymentService.updatePayment(updatePaymentOpts);
+      throw new ErrorGeneral('Internal Server Error', {
+        privateMessage: 'internal error rolling back a redemption on voucherify',
+        cause: err,
+      });
+    }
   }
 }
