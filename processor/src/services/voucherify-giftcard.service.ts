@@ -18,7 +18,7 @@ import { appLogger, paymentSDK } from '../payment-sdk';
 import { AbstractGiftCardService } from './abstract-giftcard.service';
 import { VoucherifyAPI } from '../clients/voucherify.client';
 import { BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '../dtos/voucherify-giftcards.dto';
-import { VoucherifyApiError, VoucherifyCustomError } from '../errors/voucherify-api.error';
+import { VoucherifyApiError } from '../errors/voucherify-api.error';
 import { log } from '../libs/logger';
 import { BalanceConverter } from './converters/balance-converter';
 import { RedemptionConverter } from './converters/redemption-converter';
@@ -26,8 +26,13 @@ import { getCartIdFromContext, getPaymentInterfaceFromContext } from '../libs/fa
 
 import { PaymentModificationStatus } from '../dtos/operations/payment-intents.dto';
 
-import { RedemptionsRedeemStackableParams, RedemptionsRedeemStackableResponse } from '../clients/types/redemptions';
+import { RedemptionsRedeemStackableParams } from '../clients/types/redemptions';
 import { VoucherifyError } from '../clients/voucherify.error';
+import { UnsupportedVoucherTypeCustomError } from '../errors/unsupported-voucher-type.error';
+import { handleStackableValidationResult } from '../validators/stackable-redeemable.validator';
+import { handleError } from '../errors/error-handler';
+import { RequestParametersBuilder } from '../builders/request-parameters.builder';
+import { ValidationsValidateStackableParams } from "../clients/types/validations";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -106,165 +111,102 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
   }
 
   async balance(code: string): Promise<BalanceResponseSchemaDTO> {
-    const ctCart = await this.ctCartService.getCart({
-      id: getCartIdFromContext(),
-    });
-    const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
-
     try {
-      const validationResult = await VoucherifyAPI().validations.validateStackable({
-        redeemables: [
-          {
-            object: 'voucher',
-            id: code,
-          },
-        ],
-        order: {
-          amount: amountPlanned.centAmount,
-        },
-      });
+      const ctCart = await this.ctCartService.getCart({ id: getCartIdFromContext() });
+      const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
 
-      if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
-        throw new VoucherifyCustomError({
-          message: 'cart and gift card currency do not match',
-          code: 400,
-          key: 'CurrencyNotMatch',
-        });
+      const voucher = await VoucherifyAPI().vouchers.get(code);
+      if (voucher.type !== "GIFT_VOUCHER") {
+        throw new UnsupportedVoucherTypeCustomError();
+      }
+
+      const metadataPropertyKeys = await VoucherifyAPI().metadataSchemas.getProperties("product")
+
+      const params = new RequestParametersBuilder<ValidationsValidateStackableParams>()
+        .setRedeemable(code, Math.min(voucher.gift!.balance, amountPlanned.centAmount))
+        .setOrder(ctCart.taxedPrice?.totalGross?.centAmount || ctCart.totalPrice.centAmount, ctCart.lineItems, metadataPropertyKeys, amountPlanned.currencyCode)
+        .setSession(getCartIdFromContext())
+        .setCustomer(ctCart.customerId || ctCart.anonymousId, ctCart.shippingAddress)
+        .build();
+
+      const validationResult = await VoucherifyAPI().validations.validateStackable(params);
+
+      if (!validationResult.valid) {
+        handleStackableValidationResult(validationResult);
       }
 
       return this.balanceConverter.convert(validationResult);
     } catch (err) {
       log.error('Error fetching gift card', { error: err });
-
-      if (err instanceof VoucherifyCustomError) {
-        throw err;
-      }
-
-      if (err instanceof VoucherifyError) {
-        throw new VoucherifyApiError(
-          {
-            code: err.code,
-            message: err.message,
-            key: err.key,
-          },
-          {
-            privateFields: {
-              details: err.details,
-            },
-            cause: err,
-          },
-        );
-      }
-
-      throw new ErrorGeneral('Internal Server Error', {
-        privateMessage: 'internal error making a call to voucherify',
-        cause: err,
-      });
+      return handleError(err);
     }
   }
 
   async redeem(opts: { data: RedeemRequestDTO }): Promise<RedeemResponseDTO> {
-    const ctCart = await this.ctCartService.getCart({
-      id: getCartIdFromContext(),
-    });
+    try {
+      const ctCart = await this.ctCartService.getCart({ id: getCartIdFromContext() });
+      const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
+      const redeemAmount = opts.data.redeemAmount;
+      const redeemCode = opts.data.code;
 
-    const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
-    const redeemAmount = opts.data.redeemAmount;
-    const redeemCode = opts.data.code;
+      const voucher = await VoucherifyAPI().vouchers.get(redeemCode);
+      if (voucher.type !== "GIFT_VOUCHER") {
+        throw new UnsupportedVoucherTypeCustomError();
+      }
 
-    if (getConfig().voucherifyCurrency !== amountPlanned.currencyCode) {
-      throw new VoucherifyCustomError({
-        message: 'cart and gift card currency do not match',
-        code: 400,
-        key: 'CurrencyNotMatch',
-      });
-    }
-
-    const ctPayment = await this.ctPaymentService.createPayment({
-      amountPlanned: redeemAmount,
-      paymentMethodInfo: {
-        paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
-        method: 'giftcard',
-      },
-      ...(ctCart.customerId && {
-        customer: {
-          typeId: 'customer',
-          id: ctCart.customerId,
+      const ctPayment = await this.ctPaymentService.createPayment({
+        amountPlanned: redeemAmount,
+        paymentMethodInfo: {
+          paymentInterface: getPaymentInterfaceFromContext() || 'voucherify',
+          method: 'giftcard',
         },
-      }),
-      ...(!ctCart.customerId &&
-        ctCart.anonymousId && {
+        ...(ctCart.customerId && {
+          customer: {
+            typeId: 'customer',
+            id: ctCart.customerId,
+          },
+        }),
+        ...(!ctCart.customerId &&
+          ctCart.anonymousId && {
           anonymousId: ctCart.anonymousId,
         }),
-    });
+      });
 
-    await this.ctCartService.addPayment({
-      resource: {
-        id: ctCart.id,
-        version: ctCart.version,
-      },
-      paymentId: ctPayment.id,
-    });
-
-    let res!: RedemptionsRedeemStackableResponse;
-    try {
-      const redemptionsRedeemStackableParams: RedemptionsRedeemStackableParams = {
-        redeemables: [
-          {
-            object: 'voucher',
-            id: redeemCode,
-            gift: {
-              credits: redeemAmount.centAmount,
-            },
-          },
-        ],
-        order: {
-          amount: amountPlanned.centAmount,
+      await this.ctCartService.addPayment({
+        resource: {
+          id: ctCart.id,
+          version: ctCart.version,
         },
-      };
+        paymentId: ctPayment.id,
+      });
+    
+      const metadataPropertyKeys = await VoucherifyAPI().metadataSchemas.getProperties("product")
+      const params = new RequestParametersBuilder<RedemptionsRedeemStackableParams>()
+        .setRedeemable(redeemCode, redeemAmount.centAmount)
+        .setOrder(ctCart.taxedPrice?.totalGross?.centAmount || ctCart.totalPrice.centAmount, ctCart.lineItems, metadataPropertyKeys, amountPlanned.currencyCode)
+        .setSession(getCartIdFromContext())
+        .setCustomer(ctCart.customerId || ctCart.anonymousId, ctCart.shippingAddress)
+        .build();
+      
+      
+      const res = await VoucherifyAPI().redemptions.redeemStackable(params);
 
-      res = await VoucherifyAPI().redemptions.redeemStackable(redemptionsRedeemStackableParams);
+      const updatedPayment = await this.ctPaymentService.updatePayment({
+        id: ctPayment.id,
+        pspReference: res.redemptions[0].id,
+        transaction: {
+          type: 'Charge',
+          amount: ctPayment.amountPlanned,
+          interactionId: res.redemptions[0].id,
+          state: this.redemptionConverter.convertVoucherifyResultCode(res.redemptions[0].result),
+        },
+      });
+
+      return this.redemptionConverter.convert({ redemptionResult: res, createPaymentResult: updatedPayment });
     } catch (err) {
       log.error('Error in giftcard redemption', { error: err });
-
-      if (err instanceof VoucherifyCustomError) {
-        throw err;
-      }
-
-      if (err instanceof VoucherifyError) {
-        throw new VoucherifyApiError(
-          {
-            code: err.code,
-            message: err.message,
-            key: err.key,
-          },
-          {
-            privateFields: {
-              details: err.details,
-            },
-            cause: err,
-          },
-        );
-      }
-
-      throw new ErrorGeneral('Internal Server Error', {
-        privateMessage: 'internal error making a call to voucherify',
-        cause: err,
-      });
+      return handleError(err);
     }
-
-    const updatedPayment = await this.ctPaymentService.updatePayment({
-      id: ctPayment.id,
-      pspReference: res.redemptions[0].id,
-      transaction: {
-        type: 'Charge',
-        amount: ctPayment.amountPlanned,
-        interactionId: res.redemptions[0].id,
-        state: this.redemptionConverter.convertVoucherifyResultCode(res.redemptions[0].result),
-      },
-    });
-
-    return this.redemptionConverter.convert({ redemptionResult: res, createPaymentResult: updatedPayment });
   }
 
   /**

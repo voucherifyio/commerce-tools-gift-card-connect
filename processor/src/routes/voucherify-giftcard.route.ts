@@ -1,18 +1,11 @@
-import {
-  SessionHeaderAuthenticationHook,
-  SessionQueryParamAuthenticationHook,
-} from '@commercetools/connect-payments-sdk';
+import { SessionHeaderAuthenticationHook, SessionQueryParamAuthenticationHook } from '@commercetools/connect-payments-sdk';
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { VoucherifyGiftCardService } from '../services/voucherify-giftcard.service';
-import {
-  BalanceResponseSchema,
-  BalanceResponseSchemaDTO,
-  RedeemRequestDTO,
-  RedeemResponseSchema,
-  RedeemResponseDTO,
-} from '../dtos/voucherify-giftcards.dto';
+import { BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '../dtos/voucherify-giftcards.dto';
 import { Type } from '@sinclair/typebox';
 import { AmountSchema } from '../dtos/operations/payment-intents.dto';
+import { BalanceResponseSchema } from '../schemas/balance-response.schema';
+import { RedeemResponseSchema } from '../schemas/redeem-response.schema';
 
 type RoutesOptions = {
   giftCardService: VoucherifyGiftCardService;
@@ -33,7 +26,7 @@ export const voucherifyGiftCardServiceRoutes = async (
         params: {
           type: 'object',
           properties: {
-            code: Type.String(),
+            code: Type.String({ minLength: 1})
           },
           required: ['code'],
         },
@@ -56,7 +49,7 @@ export const voucherifyGiftCardServiceRoutes = async (
         body: {
           type: 'object',
           properties: {
-            code: Type.String(),
+            code: Type.String({ minLength: 1}),
             redeemAmount: AmountSchema,
           },
           required: ['code', 'redeemAmount'],

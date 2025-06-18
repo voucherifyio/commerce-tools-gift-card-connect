@@ -29,15 +29,15 @@ describe('balance.converter', () => {
     const result = converter.convert(argument);
 
     // Assert
-    expect(result).toEqual({
+    expect(result).toEqual(expect.objectContaining({
       status: {
         state: 'Valid',
       },
       amount: {
         centAmount: 10000,
-        currencyCode: '',
+        currencyCode: 'USD',
       },
-    });
+    }));
   });
 
   test('convert invalid - voucher expired gift card response', () => {

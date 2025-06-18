@@ -1,7 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
 
 export const AmountSchema = Type.Object({
-  centAmount: Type.Integer(),
+  centAmount: Type.Integer({ minimum: 1 }),
   currencyCode: Type.String(),
 });
 

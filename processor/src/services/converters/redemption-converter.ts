@@ -23,6 +23,7 @@ export class RedemptionConverter {
       result: this.convertVoucherifyResultCode(redemptionResultObj?.result || ''),
       paymentReference: opts?.createPaymentResult.id || '',
       redemptionId: redemptionResultObj?.id || '',
+      ...opts.redemptionResult
     };
   }
 }
