@@ -1,4 +1,7 @@
-import { SessionHeaderAuthenticationHook, SessionQueryParamAuthenticationHook } from '@commercetools/connect-payments-sdk';
+import {
+  SessionHeaderAuthenticationHook,
+  SessionQueryParamAuthenticationHook,
+} from '@commercetools/connect-payments-sdk';
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { VoucherifyGiftCardService } from '../services/voucherify-giftcard.service';
 import { BalanceResponseSchemaDTO, RedeemRequestDTO, RedeemResponseDTO } from '../dtos/voucherify-giftcards.dto';
@@ -26,7 +29,7 @@ export const voucherifyGiftCardServiceRoutes = async (
         params: {
           type: 'object',
           properties: {
-            code: Type.String({ minLength: 1})
+            code: Type.String({ minLength: 1 }),
           },
           required: ['code'],
         },
@@ -49,7 +52,7 @@ export const voucherifyGiftCardServiceRoutes = async (
         body: {
           type: 'object',
           properties: {
-            code: Type.String({ minLength: 1}),
+            code: Type.String({ minLength: 1 }),
             redeemAmount: AmountSchema,
           },
           required: ['code', 'redeemAmount'],

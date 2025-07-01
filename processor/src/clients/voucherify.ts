@@ -122,6 +122,6 @@ export function Voucherify(options: VoucherifyOptions) {
     vouchers,
     validations,
     redemptions,
-    metadataSchemas
+    metadataSchemas,
   };
 }

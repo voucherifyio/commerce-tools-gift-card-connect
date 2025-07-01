@@ -156,27 +156,27 @@ export const getVoucherOk = {
     redeemed_quantity: 30,
     redeemed_amount: 38900,
     object: 'list',
-    url: '/v1/vouchers/some-code/redemptions?page=1&limit=10'
+    url: '/v1/vouchers/some-code/redemptions?page=1&limit=10',
   },
   publish: {
     object: 'list',
     count: 0,
     url: '/v1/vouchers/AmountDiscount/publications?page=1&limit=10',
   },
-  object: 'voucher'
-}
+  object: 'voucher',
+};
 
 export const getNotExistingVoucher = {
   status: {
-    state: "NotFound",
+    state: 'NotFound',
     errors: [
       {
-        code: "NotFound",
-        message: "Cannot find voucher with id some-code"
-      }
-    ]
-  }
-}
+        code: 'NotFound',
+        message: 'Cannot find voucher with id some-code',
+      },
+    ],
+  },
+};
 
 export const listMetadataSchemasOk = {
   object: 'list',
@@ -190,23 +190,23 @@ export const listMetadataSchemasOk = {
           type: 'string',
           array: false,
           optional: true,
-          objectType: null
+          objectType: null,
         },
         category: {
           type: 'string',
           array: false,
           optional: true,
-          objectType: null
-        }
+          objectType: null,
+        },
       },
       allow_defined_only: null,
       created_at: '2023-03-10T09:47:20.831Z',
       updated_at: null,
-      object: 'metadata_schema'
-    }
+      object: 'metadata_schema',
+    },
   ],
-  total: 4
-}
+  total: 4,
+};
 
 export const validateVouchersOk = {
   valid: true,

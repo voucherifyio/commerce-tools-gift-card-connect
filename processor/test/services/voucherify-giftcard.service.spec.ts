@@ -23,7 +23,7 @@ import { ModifyPayment, StatusResponse } from '../../src/services/types/operatio
 import { DefaultCartService } from '@commercetools/connect-payments-sdk/dist/commercetools/services/ct-cart.service';
 import { getCartOK, getPaymentResultOk, updatePaymentResultOk, createPaymentResultOk } from '../mocks/coco';
 import { DefaultPaymentService } from '@commercetools/connect-payments-sdk/dist/commercetools/services/ct-payment.service';
-import { VoucherifyApiError, VoucherifyCustomError } from '../../src/errors/voucherify-api.error';
+import { VoucherifyApiError } from '../../src/errors/voucherify-api.error';
 import { UnsupportedVoucherTypeCustomError } from '../../src/errors/unsupported-voucher-type.error';
 
 interface FlexibleConfig {
@@ -127,7 +127,12 @@ describe('voucherify-giftcard.service', () => {
     const code = 'some-code';
 
     setupMockConfig({ voucherifyCurrency: 'USD' });
-    mockServer.use(mockRequest('https://api.voucherify.io', `/v1/vouchers/${code}`, 200, { ...getVoucherOk, type: 'DISCOUNT_VOUCHER' }));
+    mockServer.use(
+      mockRequest('https://api.voucherify.io', `/v1/vouchers/${code}`, 200, {
+        ...getVoucherOk,
+        type: 'DISCOUNT_VOUCHER',
+      }),
+    );
 
     // Act
     const result = giftcardService.balance(code);
@@ -194,7 +199,12 @@ describe('voucherify-giftcard.service', () => {
     const code = '34567';
 
     setupMockConfig({ voucherifyCurrency: 'USD' });
-    mockServer.use(mockRequest('https://api.voucherify.io', `/v1/vouchers/${code}`, 200, { ...getVoucherOk, type: 'DISCOUNT_VOUCHER' }));
+    mockServer.use(
+      mockRequest('https://api.voucherify.io', `/v1/vouchers/${code}`, 200, {
+        ...getVoucherOk,
+        type: 'DISCOUNT_VOUCHER',
+      }),
+    );
 
     jest.spyOn(DefaultCartService.prototype, 'getCart').mockResolvedValue(getCartOK());
 

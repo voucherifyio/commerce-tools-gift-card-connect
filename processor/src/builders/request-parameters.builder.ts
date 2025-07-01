@@ -1,70 +1,77 @@
-import { Address, LineItem } from "@commercetools/connect-payments-sdk";
-import { mapLineItemsToVoucherifyOrderItems } from "../mappers/item.mapper";
-import { ValidationsValidateStackableParams } from "../clients/types/validations";
-import { RedemptionsRedeemStackableParams } from "../clients/types/redemptions";
+import { Address, LineItem } from '@commercetools/connect-payments-sdk';
+import { mapLineItemsToVoucherifyOrderItems } from '../mappers/item.mapper';
+import { ValidationsValidateStackableParams } from '../clients/types/validations';
+import { RedemptionsRedeemStackableParams } from '../clients/types/redemptions';
 
 export class RequestParametersBuilder<T extends ValidationsValidateStackableParams | RedemptionsRedeemStackableParams> {
-    #parameters: T = {} as T;
+  #parameters: T = {} as T;
 
-    setRedeemable(redeemGiftCardCode: string, creditsToRedeem: number) {
-        this.#parameters = {
-            ...this.#parameters,
-            redeemables: [
-                {
-                    object: 'voucher',
-                    id: redeemGiftCardCode,
-                    gift: { credits: creditsToRedeem },
-                },
-            ],
-        }
+  setRedeemable(redeemGiftCardCode: string, creditsToRedeem: number) {
+    this.#parameters = {
+      ...this.#parameters,
+      redeemables: [
+        {
+          object: 'voucher',
+          id: redeemGiftCardCode,
+          gift: { credits: creditsToRedeem },
+        },
+      ],
+    };
 
-        return this;
-    }
+    return this;
+  }
 
-    setOrder(amount: number, lineItems: LineItem[], metadataPropertyKeys: string[] = [], currencyCode: string) {
-        this.#parameters = {
-            ...this.#parameters,
-            order: {
-                amount: amount,
-                items: mapLineItemsToVoucherifyOrderItems(lineItems, metadataPropertyKeys),
-                metadata: { ct_currency: currencyCode },
-            },
-        }
+  setOrder(amount: number, lineItems: LineItem[], metadataPropertyKeys: string[] = [], currencyCode: string) {
+    this.#parameters = {
+      ...this.#parameters,
+      order: {
+        amount: amount,
+        items: mapLineItemsToVoucherifyOrderItems(lineItems, metadataPropertyKeys),
+        metadata: { ct_currency: currencyCode },
+      },
+    };
 
-        return this;
-    }
+    return this;
+  }
 
-    setSession(sessionId: string, ttlHours: number = 3) {
-        this.#parameters = {
-            ...this.#parameters,
-            session: { type: 'LOCK', key: `CT:${sessionId}`, ttl_unit: "HOURS", ttl: ttlHours },
-        }
+  setSession(sessionId: string, ttlHours: number = 3) {
+    this.#parameters = {
+      ...this.#parameters,
+      session: { type: 'LOCK', key: `CT-gift-card:${sessionId}`, ttl_unit: 'HOURS', ttl: ttlHours },
+    };
 
-        return this;
-    }
+    return this;
+  }
 
-    setCustomer(customerId?: string, shippingAddress?: Address) {
-        this.#parameters = {
-            ...this.#parameters,
-            customer: {
-                ...(customerId && { source_id: customerId }),
-                ...(shippingAddress?.firstName && shippingAddress?.lastName && { name: `${shippingAddress.firstName} ${shippingAddress.lastName}` }),
-                ...(shippingAddress?.email && { email: shippingAddress.email }),
-                address: {
-                  ...(shippingAddress?.city && { city: shippingAddress.city }),
-                  ...(shippingAddress?.country && { country: shippingAddress.country }),
-                  ...(shippingAddress?.postalCode && { postal_code: shippingAddress.postalCode }),
-                  ...(shippingAddress?.streetName && { line_1: shippingAddress.streetName }),
-                },
-                ...(shippingAddress?.phone && { phone: shippingAddress.phone }),
-                metadata: { source_id: customerId },
-              }
-        }
+  setCustomer(customerId?: string, shippingAddress?: Address) {
+    const getName = () => {
+      if (shippingAddress?.firstName || shippingAddress?.lastName) {
+        return `${shippingAddress?.firstName || ''} ${shippingAddress?.lastName || ''}`;
+      }
+      return undefined;
+    };
 
-        return this;
-    }
+    this.#parameters = {
+      ...this.#parameters,
+      customer: {
+        source_id: customerId || undefined,
+        name: getName(),
+        email: shippingAddress?.email || undefined,
+        address: {
+          city: shippingAddress?.city || undefined,
+          country: shippingAddress?.country || undefined,
+          postal_code: shippingAddress?.postalCode || undefined,
+          line_1: shippingAddress?.streetName || undefined,
+        },
+        phone: shippingAddress?.phone || undefined,
+        metadata: { source_id: customerId },
+      },
+    };
 
-    build() {
-        return this.#parameters;
-    }
+    return this;
+  }
+
+  build() {
+    return this.#parameters;
+  }
 }

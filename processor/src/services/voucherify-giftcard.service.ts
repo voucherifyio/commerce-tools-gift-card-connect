@@ -32,7 +32,7 @@ import { UnsupportedVoucherTypeCustomError } from '../errors/unsupported-voucher
 import { handleStackableValidationResult } from '../validators/stackable-redeemable.validator';
 import { handleError } from '../errors/error-handler';
 import { RequestParametersBuilder } from '../builders/request-parameters.builder';
-import { ValidationsValidateStackableParams } from "../clients/types/validations";
+import { ValidationsValidateStackableParams } from '../clients/types/validations';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -116,15 +116,20 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
       const amountPlanned = await this.ctCartService.getPaymentAmount({ cart: ctCart });
 
       const voucher = await VoucherifyAPI().vouchers.get(code);
-      if (voucher.type !== "GIFT_VOUCHER") {
+      if (voucher.type !== 'GIFT_VOUCHER') {
         throw new UnsupportedVoucherTypeCustomError();
       }
 
-      const metadataPropertyKeys = await VoucherifyAPI().metadataSchemas.getProperties("product")
+      const metadataPropertyKeys = await VoucherifyAPI().metadataSchemas.getProperties('product');
 
       const params = new RequestParametersBuilder<ValidationsValidateStackableParams>()
         .setRedeemable(code, Math.min(voucher.gift!.balance, amountPlanned.centAmount))
-        .setOrder(ctCart.taxedPrice?.totalGross?.centAmount || ctCart.totalPrice.centAmount, ctCart.lineItems, metadataPropertyKeys, amountPlanned.currencyCode)
+        .setOrder(
+          ctCart.taxedPrice?.totalGross?.centAmount || ctCart.totalPrice.centAmount,
+          ctCart.lineItems,
+          metadataPropertyKeys,
+          amountPlanned.currencyCode,
+        )
         .setSession(getCartIdFromContext())
         .setCustomer(ctCart.customerId || ctCart.anonymousId, ctCart.shippingAddress)
         .build();
@@ -150,7 +155,7 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
       const redeemCode = opts.data.code;
 
       const voucher = await VoucherifyAPI().vouchers.get(redeemCode);
-      if (voucher.type !== "GIFT_VOUCHER") {
+      if (voucher.type !== 'GIFT_VOUCHER') {
         throw new UnsupportedVoucherTypeCustomError();
       }
 
@@ -168,8 +173,8 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         }),
         ...(!ctCart.customerId &&
           ctCart.anonymousId && {
-          anonymousId: ctCart.anonymousId,
-        }),
+            anonymousId: ctCart.anonymousId,
+          }),
       });
 
       await this.ctCartService.addPayment({
@@ -179,30 +184,38 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         },
         paymentId: ctPayment.id,
       });
-    
-      const metadataPropertyKeys = await VoucherifyAPI().metadataSchemas.getProperties("product")
+
+      const metadataPropertyKeys = await VoucherifyAPI().metadataSchemas.getProperties('product');
       const params = new RequestParametersBuilder<RedemptionsRedeemStackableParams>()
         .setRedeemable(redeemCode, redeemAmount.centAmount)
-        .setOrder(ctCart.taxedPrice?.totalGross?.centAmount || ctCart.totalPrice.centAmount, ctCart.lineItems, metadataPropertyKeys, amountPlanned.currencyCode)
+        .setOrder(
+          ctCart.taxedPrice?.totalGross?.centAmount || ctCart.totalPrice.centAmount,
+          ctCart.lineItems,
+          metadataPropertyKeys,
+          amountPlanned.currencyCode,
+        )
         .setSession(getCartIdFromContext())
         .setCustomer(ctCart.customerId || ctCart.anonymousId, ctCart.shippingAddress)
         .build();
-      
-      
-      const res = await VoucherifyAPI().redemptions.redeemStackable(params);
+
+      const redeemStackableResult = await VoucherifyAPI().redemptions.redeemStackable(params);
+      const voucherifyRedemptionId = redeemStackableResult.redemptions[0].id;
 
       const updatedPayment = await this.ctPaymentService.updatePayment({
         id: ctPayment.id,
-        pspReference: res.redemptions[0].id,
+        pspReference: voucherifyRedemptionId,
         transaction: {
           type: 'Charge',
           amount: ctPayment.amountPlanned,
-          interactionId: res.redemptions[0].id,
-          state: this.redemptionConverter.convertVoucherifyResultCode(res.redemptions[0].result),
+          interactionId: voucherifyRedemptionId,
+          state: this.redemptionConverter.convertVoucherifyResultCode(redeemStackableResult.redemptions[0].result),
         },
       });
 
-      return this.redemptionConverter.convert({ redemptionResult: res, createPaymentResult: updatedPayment });
+      return this.redemptionConverter.convert({
+        redemptionResult: redeemStackableResult,
+        createPaymentResult: updatedPayment,
+      });
     } catch (err) {
       log.error('Error in giftcard redemption', { error: err });
       return handleError(err);
