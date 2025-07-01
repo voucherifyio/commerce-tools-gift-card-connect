@@ -261,7 +261,26 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
     const redemptionId = ctPayment.interfaceId;
 
     try {
+      await this.ctPaymentService.updatePayment({
+        id: request.payment.id,
+        transaction: {
+          type: 'Refund',
+          amount: request.amount,
+          state: 'Initial',
+        },
+      });
+
       const rollbackResult = await VoucherifyAPI().redemptions.rollback(redemptionId as string);
+
+      await this.ctPaymentService.updatePayment({
+        id: request.payment.id,
+        transaction: {
+          type: 'Refund',
+          amount: request.amount,
+          interactionId: rollbackResult.id,
+          state: rollbackResult.result ? 'Success' : 'Failure',
+        },
+      });
 
       return {
         outcome:
