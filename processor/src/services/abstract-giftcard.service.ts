@@ -12,6 +12,7 @@ import {
   ModifyPayment,
   PaymentProviderModificationResponse,
   RefundPaymentRequest,
+  ReversePaymentRequest,
   StatusResponse,
 } from './types/operation.type';
 import {
@@ -76,6 +77,13 @@ export abstract class AbstractGiftCardService {
    */
   abstract refundPayment(request: RefundPaymentRequest): Promise<PaymentProviderModificationResponse>;
 
+  /**
+   * Reverse payment
+   * @param request
+   * @returns
+   */
+  abstract reversePayment(request: ReversePaymentRequest): Promise<PaymentProviderModificationResponse>;
+
   public async modifyPayment(opts: ModifyPayment): Promise<PaymentIntentResponseSchemaDTO> {
     const ctPayment = await this.ctPaymentService.getPayment({
       id: opts.paymentId,
@@ -84,7 +92,7 @@ export abstract class AbstractGiftCardService {
     const request = opts.data.actions[0];
 
     let requestAmount!: AmountSchemaDTO;
-    if (request.action != 'cancelPayment') {
+    if (request.action != 'cancelPayment' && request.action != 'reversePayment') {
       requestAmount = request.amount;
     } else {
       requestAmount = ctPayment.amountPlanned;
@@ -140,6 +148,9 @@ export abstract class AbstractGiftCardService {
       case 'refundPayment': {
         return 'Refund';
       }
+      case 'reversePayment': {
+        return 'Reverse';
+      }
       default: {
         log.error(`Operation ${action} not supported when modifying payment.`);
         throw new ErrorInvalidJsonInput(`Request body does not contain valid JSON.`);
@@ -161,6 +172,9 @@ export abstract class AbstractGiftCardService {
       }
       case 'Refund': {
         return await this.refundPayment({ amount: requestAmount, payment });
+      }
+      case 'Reverse': {
+        return await this.reversePayment({ payment });
       }
       default: {
         throw new ErrorInvalidOperation(`Operation ${transactionType} not supported.`);

@@ -11,6 +11,7 @@ import {
   CapturePaymentRequest,
   PaymentProviderModificationResponse,
   RefundPaymentRequest,
+  ReversePaymentRequest,
   StatusResponse,
 } from './types/operation.type';
 import { getConfig } from '../config/config';
@@ -268,42 +269,9 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
    * @returns Promise with mocking data containing operation status and PSP reference
    */
   async refundPayment(request: RefundPaymentRequest): Promise<PaymentProviderModificationResponse> {
-    const ctPayment = await this.ctPaymentService.getPayment({
-      id: request.payment.id,
-    });
-    const redemptionId = ctPayment.interfaceId;
-
     try {
-      await this.ctPaymentService.updatePayment({
-        id: request.payment.id,
-        transaction: {
-          type: 'Refund',
-          amount: request.amount,
-          state: 'Initial',
-        },
-      });
-
-      const rollbackResult = await VoucherifyAPI().redemptions.rollback(redemptionId as string);
-
-      await this.ctPaymentService.updatePayment({
-        id: request.payment.id,
-        transaction: {
-          type: 'Refund',
-          amount: request.amount,
-          interactionId: rollbackResult.id,
-          state: rollbackResult.result ? 'Success' : 'Failure',
-        },
-      });
-
-      return {
-        outcome:
-          rollbackResult.result === 'SUCCESS' ? PaymentModificationStatus.APPROVED : PaymentModificationStatus.REJECTED,
-        pspReference: rollbackResult.id,
-        amountRefunded: {
-          currencyCode: ctPayment.amountPlanned.currencyCode,
-          centAmount: Math.abs(rollbackResult.amount || 0),
-        },
-      };
+      const response = await this.handleRefunds(request);
+      return response;
     } catch (err) {
       if (err instanceof VoucherifyError) {
         throw new VoucherifyApiError(
@@ -326,5 +294,81 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
         cause: err,
       });
     }
+  }
+
+  /**
+   * Reverse payment
+   *
+   * @remarks
+   * Abstract method to execute payment reversals in support of automated reversals to be triggered by checkout api. The actual invocation to PSPs should be implemented in subclasses
+   *
+   * @param request
+   * @returns Promise with outcome containing operation status and PSP reference
+   */
+  async reversePayment(request: ReversePaymentRequest): Promise<PaymentProviderModificationResponse> {
+    try {
+      const response = await this.handleRefunds({
+        amount: request.payment.amountPlanned,
+        payment: request.payment,
+      });
+      return response;
+    } catch (err) {
+      if (err instanceof VoucherifyError) {
+        throw new VoucherifyApiError(
+          {
+            code: err.code,
+            message: err.message,
+            key: err.key,
+          },
+          {
+            privateFields: {
+              details: err.details,
+            },
+            cause: err,
+          },
+        );
+      }
+
+      throw new ErrorGeneral('Internal Server Error', {
+        privateMessage: 'internal error rolling back a redemption on voucherify',
+        cause: err,
+      });
+    }
+  }
+
+  private async handleRefunds(request: RefundPaymentRequest): Promise<PaymentProviderModificationResponse> {
+    const ctPayment = await this.ctPaymentService.getPayment({ id: request.payment.id });
+    const redemptionId = ctPayment.interfaceId;
+
+    await this.ctPaymentService.updatePayment({
+      id: request.payment.id,
+      transaction: {
+        type: 'Refund',
+        amount: request.amount,
+        state: 'Initial',
+      },
+    });
+
+    const rollbackResult = await VoucherifyAPI().redemptions.rollback(redemptionId as string);
+
+    await this.ctPaymentService.updatePayment({
+      id: request.payment.id,
+      transaction: {
+        type: 'Refund',
+        amount: request.amount,
+        interactionId: rollbackResult.id,
+        state: rollbackResult.result ? 'Success' : 'Failure',
+      },
+    });
+
+    return {
+      outcome:
+        rollbackResult.result === 'SUCCESS' ? PaymentModificationStatus.APPROVED : PaymentModificationStatus.REJECTED,
+      pspReference: rollbackResult?.id || '',
+      amountRefunded: {
+        currencyCode: ctPayment.amountPlanned.currencyCode,
+        centAmount: Math.abs(rollbackResult.amount || 0),
+      },
+    };
   }
 }
