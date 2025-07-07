@@ -300,10 +300,10 @@ export class VoucherifyGiftCardService extends AbstractGiftCardService {
    * Reverse payment
    *
    * @remarks
-   * Abstract method to execute payment reversals in support of automated reversals to be triggered by checkout api. The actual invocation to PSPs should be implemented in subclasses
+   * Implementation to provide the mocking data for payment reverse in external PSPs
    *
-   * @param request
-   * @returns Promise with outcome containing operation status and PSP reference
+   * @param request - contains {@link https://docs.commercetools.com/api/projects/payments | Payment } defined in composable commerce
+   * @returns Promise with mocking data containing operation status and PSP reference
    */
   async reversePayment(request: ReversePaymentRequest): Promise<PaymentProviderModificationResponse> {
     try {
