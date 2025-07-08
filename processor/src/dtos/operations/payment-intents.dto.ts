@@ -32,6 +32,7 @@ export const ActionCancelPaymentSchema = Type.Composite([
 export const ActionReversePaymentSchema = Type.Composite([
   Type.Object({
     action: Type.Literal('reversePayment'),
+    merchantReference: Type.Optional(Type.String()),
   }),
 ]);
 
