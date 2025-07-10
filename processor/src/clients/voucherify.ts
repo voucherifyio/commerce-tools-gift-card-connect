@@ -3,6 +3,7 @@ import { Vouchers } from './vouchers';
 import { Validations } from './validations';
 import { assert, isString, isObject } from './helpers';
 import { Redemptions } from './redemptions';
+import { MetadataSchemas } from './metadata-schemas';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const packageJSON = require('../../package.json');
@@ -115,10 +116,12 @@ export function Voucherify(options: VoucherifyOptions) {
   const vouchers = new Vouchers(client);
   const validations = new Validations(client);
   const redemptions = new Redemptions(client);
+  const metadataSchemas = new MetadataSchemas(client);
 
   return {
     vouchers,
     validations,
     redemptions,
+    metadataSchemas,
   };
 }

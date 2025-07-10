@@ -17,6 +17,7 @@ export class BalanceConverter {
           centAmount: result?.gift?.balance || 0,
           currencyCode: getConfig().voucherifyCurrency,
         },
+        ...opts,
       };
     }
 

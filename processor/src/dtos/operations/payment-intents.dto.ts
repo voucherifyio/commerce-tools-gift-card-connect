@@ -1,7 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
 
 export const AmountSchema = Type.Object({
-  centAmount: Type.Integer(),
+  centAmount: Type.Integer({ minimum: 1 }),
   currencyCode: Type.String(),
 });
 
@@ -29,10 +29,25 @@ export const ActionCancelPaymentSchema = Type.Composite([
   }),
 ]);
 
-export const PaymentIntentRequestSchema = Type.Object({
-  actions: Type.Array(Type.Union([ActionCapturePaymentSchema, ActionRefundPaymentSchema, ActionCancelPaymentSchema]), {
-    maxItems: 1,
+export const ActionReversePaymentSchema = Type.Composite([
+  Type.Object({
+    action: Type.Literal('reversePayment'),
+    merchantReference: Type.Optional(Type.String()),
   }),
+]);
+
+export const PaymentIntentRequestSchema = Type.Object({
+  actions: Type.Array(
+    Type.Union([
+      ActionCapturePaymentSchema,
+      ActionRefundPaymentSchema,
+      ActionCancelPaymentSchema,
+      ActionReversePaymentSchema,
+    ]),
+    {
+      maxItems: 1,
+    },
+  ),
 });
 
 export enum PaymentModificationStatus {

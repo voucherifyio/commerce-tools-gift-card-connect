@@ -126,6 +126,88 @@ export const listVouchersOk = {
   total: 2,
 };
 
+export const getVoucherOk = {
+  id: 'v_q5uy89nhs4oVpDW8u5sZY6eDReLxh6jJ',
+  code: 'some-code',
+  campaign: 'CTGiftCampaign',
+  campaign_id: 'camp_m1QnhMGb8ImqkB28vvd9CRid',
+  category: null,
+  category_id: null,
+  categories: [],
+  type: 'GIFT_VOUCHER',
+  discount: null,
+  gift: { amount: 601900, balance: 563000, effect: 'APPLY_TO_ORDER' },
+  loyalty_card: null,
+  start_date: null,
+  expiration_date: null,
+  validity_timeframe: null,
+  validity_hours: null,
+  validity_day_of_week: null,
+  active: true,
+  additional_info: null,
+  metadata: {},
+  assets: {},
+  is_referral_code: false,
+  created_at: '2025-06-09T11:24:21.292Z',
+  updated_at: '2025-06-16T06:16:21.605Z',
+  validation_rules_assignments: { object: 'list', data_ref: 'data', data: [], total: 0 },
+  redemption: {
+    quantity: null,
+    redeemed_quantity: 30,
+    redeemed_amount: 38900,
+    object: 'list',
+    url: '/v1/vouchers/some-code/redemptions?page=1&limit=10',
+  },
+  publish: {
+    object: 'list',
+    count: 0,
+    url: '/v1/vouchers/AmountDiscount/publications?page=1&limit=10',
+  },
+  object: 'voucher',
+};
+
+export const getNotExistingVoucher = {
+  status: {
+    state: 'NotFound',
+    errors: [
+      {
+        code: 'NotFound',
+        message: 'Cannot find voucher with id some-code',
+      },
+    ],
+  },
+};
+
+export const listMetadataSchemasOk = {
+  object: 'list',
+  data_ref: 'schemas',
+  schemas: [
+    {
+      id: 'ms_s3c0N6m3ta6a4a5ch3ma',
+      related_object: 'product',
+      properties: {
+        vendor: {
+          type: 'string',
+          array: false,
+          optional: true,
+          objectType: null,
+        },
+        category: {
+          type: 'string',
+          array: false,
+          optional: true,
+          objectType: null,
+        },
+      },
+      allow_defined_only: null,
+      created_at: '2023-03-10T09:47:20.831Z',
+      updated_at: null,
+      object: 'metadata_schema',
+    },
+  ],
+  total: 4,
+};
+
 export const validateVouchersOk = {
   valid: true,
   redeemables: [

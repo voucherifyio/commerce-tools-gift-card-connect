@@ -23,6 +23,15 @@ export const mockRequest = (basePath: string, uri: string, respCode: number, dat
       });
     }
 
+    if (respCode === 404) {
+      return new Response(objectToReadableStream(data), {
+        headers: {
+          'paypal-debug-id': '12345678',
+        },
+        status: respCode,
+      });
+    }
+
     if (respCode >= 299) {
       const errorData = {
         name: 'SOME_ERROR_NAME',

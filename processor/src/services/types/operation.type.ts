@@ -20,6 +20,10 @@ export type RefundPaymentRequest = {
   payment: Payment;
 };
 
+export type ReversePaymentRequest = {
+  payment: Payment;
+};
+
 export type PaymentProviderModificationResponse = {
   outcome: PaymentModificationStatus;
   pspReference: string;
