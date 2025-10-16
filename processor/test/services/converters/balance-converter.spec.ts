@@ -36,7 +36,7 @@ describe('balance.converter', () => {
         },
         amount: {
           centAmount: 10000,
-          currencyCode: 'USD',
+          currencyCode: '',
         },
       }),
     );
